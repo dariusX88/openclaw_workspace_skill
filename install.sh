@@ -58,7 +58,7 @@ preflight() {
 find_openclaw() {
   info "Looking for OpenClaw container..."
 
-  OPENCLAW_CONTAINER=$(docker ps --filter "name=openclaw" --format '{{.Names}}' | head -1)
+  OPENCLAW_CONTAINER=$(docker ps --format '{{.Names}}' | grep -i openclaw | grep -v workspace_skill | head -1)
 
   if [ -z "${OPENCLAW_CONTAINER}" ]; then
     warn "OpenClaw container not found (not running)."
