@@ -356,6 +356,7 @@ Column types: `text`, `number`, `date`, `boolean`, `select`, `url`
 | GET | `/files?workspaceId=...` | — | `{files: [...]}` |
 | POST | `/files?workspaceId=...` | multipart `file` field | `{id}` |
 | GET | `/files/:id/download` | — | file stream |
+| GET | `/files/:id/text` | — | `{id, filename, pages, text}` (PDF only) |
 
 ### File Browser (Cookie Auth)
 

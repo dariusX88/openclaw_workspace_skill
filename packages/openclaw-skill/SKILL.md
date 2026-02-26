@@ -113,3 +113,13 @@ curl -s -X POST "http://localhost:8081/files?workspaceId=WORKSPACE_ID" -H "Autho
 ```bash
 curl -s -X GET "http://localhost:8081/files/FILE_ID/download" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -o output_filename
 ```
+
+### Extract Text from a PDF File
+
+```bash
+curl -s -X GET "http://localhost:8081/files/FILE_ID/text" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Returns: `{"id": "uuid", "filename": "doc.pdf", "pages": 5, "text": "extracted plain text..."}`
+
+Use this to read the contents of uploaded PDF files. Only PDF files are supported.

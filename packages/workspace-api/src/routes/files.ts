@@ -3,6 +3,7 @@ import { assertServiceAuth } from "../auth.js";
 import fs from "node:fs";
 import path from "node:path";
 import crypto from "node:crypto";
+import pdfParse from "pdf-parse";
 
 export async function filesRoutes(app: FastifyInstance) {
   const { db, serviceToken } = app as any;
@@ -71,5 +72,44 @@ export async function filesRoutes(app: FastifyInstance) {
       `attachment; filename="${f.filename}"`
     );
     return fs.createReadStream(f.storage_path);
+  });
+
+  /* ── Extract text from a file (PDF → plain text) ── */
+  app.get("/files/:id/text", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const id = (req.params as any).id;
+    const rows = await db.q("select * from files where id=$1", [id]);
+    if (!rows[0]) {
+      reply.code(404);
+      return { error: "not found" };
+    }
+    const f = rows[0];
+
+    // Only PDFs are supported for now
+    const isPdf =
+      f.content_type === "application/pdf" ||
+      (f.filename && f.filename.toLowerCase().endsWith(".pdf"));
+    if (!isPdf) {
+      reply.code(400);
+      return {
+        error: "Text extraction only supports PDF files",
+        filename: f.filename,
+        content_type: f.content_type,
+      };
+    }
+
+    try {
+      const buffer = await fs.promises.readFile(f.storage_path);
+      const parsed = await pdfParse(buffer);
+      return {
+        id: f.id,
+        filename: f.filename,
+        pages: parsed.numpages,
+        text: parsed.text,
+      };
+    } catch (err: any) {
+      reply.code(500);
+      return { error: "Failed to extract text", detail: err.message };
+    }
   });
 }
