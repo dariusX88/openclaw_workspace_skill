@@ -1,0 +1,11 @@
+{
+  "name": "openclaw-workspace",
+  "version": "0.1.0",
+  "description": "Workspace native: docs, tables, calendar, files (VPS-first).",
+  "entry": "index.ts",
+  "tools": "tools.json",
+  "config": {
+    "WORKSPACE_API_URL": "http://localhost:8081",
+    "WORKSPACE_SERVICE_TOKEN": "${WORKSPACE_SERVICE_TOKEN}"
+  }
+}

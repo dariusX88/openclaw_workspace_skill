@@ -1,0 +1,29 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: workspace
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: workspace
+    volumes:
+      - workspace_db:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  api:
+    build: ./packages/workspace-api
+    environment:
+      PORT: 8080
+      DB_URL: postgres://workspace:${DB_PASSWORD}@db:5432/workspace
+      WORKSPACE_SERVICE_TOKEN: ${WORKSPACE_SERVICE_TOKEN}
+      FILES_DIR: /data/files
+    volumes:
+      - workspace_files:/data/files
+    depends_on:
+      - db
+    ports:
+      - "8081:8080"
+    restart: unless-stopped
+
+volumes:
+  workspace_db:
+  workspace_files:

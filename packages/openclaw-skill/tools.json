@@ -1,0 +1,55 @@
+[
+  {
+    "name": "workspace_create_page",
+    "description": "Create a docs page",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "title": { "type": "string" }
+      },
+      "required": ["workspaceId", "title"]
+    }
+  },
+  {
+    "name": "workspace_add_block",
+    "description": "Add a block to a docs page",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "pageId": { "type": "string" },
+        "type": { "type": "string" },
+        "data": { "type": "object" },
+        "orderIndex": { "type": "integer" }
+      },
+      "required": ["pageId", "type", "data"]
+    }
+  },
+  {
+    "name": "workspace_create_table",
+    "description": "Create a table",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "workspaceId": { "type": "string" },
+        "name": { "type": "string" }
+      },
+      "required": ["workspaceId", "name"]
+    }
+  },
+  {
+    "name": "workspace_create_event",
+    "description": "Create a calendar event",
+    "input_schema": {
+      "type": "object",
+      "properties": {
+        "calendarId": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "startTs": { "type": "string" },
+        "endTs": { "type": "string" }
+      },
+      "required": ["calendarId", "title", "startTs", "endTs"]
+    }
+  }
+]
