@@ -30,6 +30,32 @@ export async function filesRoutes(app: FastifyInstance) {
     return { id: rows[0].id };
   });
 
+  app.get("/files", async (req) => {
+    assertServiceAuth(req, serviceToken);
+    const workspaceId = (req.query as any)?.workspaceId;
+    if (workspaceId) {
+      const rows = await db.q(
+        `select f.id, f.workspace_id, f.filename, f.content_type,
+                f.size_bytes, f.created_at, w.name as workspace_name
+         from files f
+         left join workspaces w on w.id = f.workspace_id
+         where f.workspace_id = $1
+         order by f.created_at desc`,
+        [workspaceId]
+      );
+      return { files: rows };
+    }
+    const rows = await db.q(
+      `select f.id, f.workspace_id, f.filename, f.content_type,
+              f.size_bytes, f.created_at, w.name as workspace_name
+       from files f
+       left join workspaces w on w.id = f.workspace_id
+       order by f.created_at desc
+       limit 500`
+    );
+    return { files: rows };
+  });
+
   app.get("/files/:id/download", async (req, reply) => {
     assertServiceAuth(req, serviceToken);
     const id = (req.params as any).id;

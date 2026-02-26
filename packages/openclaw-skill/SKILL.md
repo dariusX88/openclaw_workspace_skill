@@ -96,6 +96,12 @@ curl -s -X GET "http://localhost:8081/calendars/CALENDAR_ID/events?from=2026-03-
 
 ## Files
 
+### List Files in a Workspace
+
+```bash
+curl -s -X GET "http://localhost:8081/files?workspaceId=WORKSPACE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
 ### Upload a File
 
 ```bash
