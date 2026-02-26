@@ -288,3 +288,15 @@ Searches across doc pages, doc blocks, table names, calendar events, and file na
 ```
 
 The `workspaceId` parameter is optional — omit it to search across all workspaces.
+
+---
+
+## Dashboard (for the user)
+
+The workspace has a web dashboard where the user can visually browse everything you create — docs, tables, calendars, and files. When the user asks to see, view, or check their workspace content, tell them to open:
+
+```
+http://localhost:8081/browser
+```
+
+They log in with the service token. The dashboard has tabs for Files, Docs, Tables, and Calendar, with dark mode, create forms, and auto-refresh. Everything you create via the API will appear there automatically.
