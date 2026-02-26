@@ -512,4 +512,157 @@ export async function browserRoutes(app: FastifyInstance) {
     if (!rows[0]) { reply.code(404); return { error: "not found" }; }
     return { ok: true };
   });
+
+  // ═══════════════════════════════════════════════
+  //  EXPORT — Download docs as .md, tables as .csv, calendars as .ics
+  // ═══════════════════════════════════════════════
+
+  // ── GET /browser/api/docs/pages/:id/export/markdown ───
+  app.get("/browser/api/docs/pages/:id/export/markdown", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const pages = await db.q("select * from docs_pages where id=$1", [id]);
+    if (!pages[0]) { reply.code(404); return { error: "not found" }; }
+    const page = pages[0];
+    const blocks = await db.q(
+      "select type, data, order_index from docs_blocks where page_id=$1 order by order_index asc",
+      [id]
+    );
+
+    let md = `# ${page.title}\n\n`;
+    for (const block of blocks) {
+      const d = block.data || {};
+      switch (block.type) {
+        case "heading": {
+          const level = d.level || 2;
+          md += `${"#".repeat(level)} ${d.content || ""}\n\n`;
+          break;
+        }
+        case "text":
+          md += `${d.content || ""}\n\n`;
+          break;
+        case "list": {
+          const items = d.items || (d.content ? d.content.split("\n") : []);
+          for (const item of items) {
+            const text = typeof item === "string" ? item : (item?.text || "");
+            md += `- ${text}\n`;
+          }
+          md += "\n";
+          break;
+        }
+        case "code":
+          md += `\`\`\`${d.language || ""}\n${d.content || d.code || ""}\n\`\`\`\n\n`;
+          break;
+        case "image":
+          md += `![${d.alt || "Image"}](${d.url || d.src || ""})\n\n`;
+          break;
+        case "table": {
+          const headers = d.headers || [];
+          const tblRows = d.rows || [];
+          if (headers.length) {
+            md += `| ${headers.join(" | ")} |\n`;
+            md += `| ${headers.map(() => "---").join(" | ")} |\n`;
+          }
+          for (const row of tblRows) {
+            const vals = Array.isArray(row) ? row : Object.values(row);
+            md += `| ${vals.join(" | ")} |\n`;
+          }
+          md += "\n";
+          break;
+        }
+        default:
+          md += `${d.content || JSON.stringify(d)}\n\n`;
+      }
+    }
+
+    const filename = (page.title || "document").replace(/[^\w.\-]+/g, "_") + ".md";
+    reply.header("Content-Type", "text/markdown; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+    return md;
+  });
+
+  // ── GET /browser/api/tables/:id/export/csv ────────────
+  app.get("/browser/api/tables/:id/export/csv", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const tables = await db.q("select name from tables where id=$1", [id]);
+    if (!tables[0]) { reply.code(404); return { error: "not found" }; }
+
+    const columns = await db.q(
+      "select id, name, type from table_columns where table_id=$1 order by order_index asc",
+      [id]
+    );
+    const rowsList = await db.q(
+      "select id from table_rows where table_id=$1 order by created_at asc",
+      [id]
+    );
+    const rowIds = rowsList.map((r: any) => r.id);
+    let cells: any[] = [];
+    if (rowIds.length > 0) {
+      cells = await db.q(
+        "select row_id, column_id, value from table_cells where row_id = ANY($1)",
+        [rowIds]
+      );
+    }
+    const cellMap: Record<string, Record<string, any>> = {};
+    for (const c of cells) {
+      if (!cellMap[c.row_id]) cellMap[c.row_id] = {};
+      cellMap[c.row_id][c.column_id] = c.value;
+    }
+
+    const csvEsc = (v: any) => {
+      const s = v === null || v === undefined ? "" : String(typeof v === "object" ? (v.value ?? JSON.stringify(v)) : v);
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const header = columns.map((c: any) => csvEsc(c.name)).join(",");
+    const csvRows = rowIds.map((rid: string) =>
+      columns.map((col: any) => csvEsc(cellMap[rid]?.[col.id])).join(",")
+    );
+    const csv = [header, ...csvRows].join("\n");
+    const filename = (tables[0].name || "table").replace(/[^\w.\-]+/g, "_") + ".csv";
+
+    reply.header("Content-Type", "text/csv; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+    return csv;
+  });
+
+  // ── GET /browser/api/calendars/:id/export/ics ─────────
+  app.get("/browser/api/calendars/:id/export/ics", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const cals = await db.q(
+      "select c.name from calendars c where c.id=$1",
+      [id]
+    );
+    if (!cals[0]) { reply.code(404); return { error: "not found" }; }
+
+    const events = await db.q(
+      "select id, title, description, start_ts, end_ts from events where calendar_id=$1 order by start_ts asc",
+      [id]
+    );
+
+    // Format date to iCalendar format: 20260226T150000Z
+    const icalDate = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+    const icalEsc = (s: string) => (s || "").replace(/\\/g, "\\\\").replace(/;/g, "\\;").replace(/,/g, "\\,").replace(/\n/g, "\\n");
+
+    let ics = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//OpenClaw Workspace//EN\r\n";
+    ics += `X-WR-CALNAME:${icalEsc(cals[0].name)}\r\n`;
+
+    for (const ev of events) {
+      ics += "BEGIN:VEVENT\r\n";
+      ics += `UID:${ev.id}@workspace\r\n`;
+      ics += `DTSTART:${icalDate(ev.start_ts)}\r\n`;
+      ics += `DTEND:${icalDate(ev.end_ts)}\r\n`;
+      ics += `SUMMARY:${icalEsc(ev.title)}\r\n`;
+      if (ev.description) ics += `DESCRIPTION:${icalEsc(ev.description)}\r\n`;
+      ics += "END:VEVENT\r\n";
+    }
+    ics += "END:VCALENDAR\r\n";
+
+    const filename = (cals[0].name || "calendar").replace(/[^\w.\-]+/g, "_") + ".ics";
+    reply.header("Content-Type", "text/calendar; charset=utf-8");
+    reply.header("Content-Disposition", `attachment; filename="${filename}"`);
+    return ics;
+  });
 }
