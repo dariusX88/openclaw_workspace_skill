@@ -6,6 +6,7 @@ import { docsRoutes } from "./routes/docs.js";
 import { tablesRoutes } from "./routes/tables.js";
 import { calendarRoutes } from "./routes/calendar.js";
 import { filesRoutes } from "./routes/files.js";
+import { workspacesRoutes } from "./routes/workspaces.js";
 
 const port = Number(process.env.PORT || 8080);
 const dbUrl = process.env.DB_URL!;
@@ -28,6 +29,7 @@ await app.register(docsRoutes);
 await app.register(tablesRoutes);
 await app.register(calendarRoutes);
 await app.register(filesRoutes);
+await app.register(workspacesRoutes);
 
 app.setErrorHandler((err, req, reply) => {
   const e = err as any;
