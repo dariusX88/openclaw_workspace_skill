@@ -280,6 +280,36 @@
   .toast.show { transform: translateY(0); opacity: 1; }
   .toast.error { background: var(--danger); color: #fff; }
 
+  /* ── Inline Editing ──────────────────────────────── */
+  .editable-cell { cursor: pointer; position: relative; }
+  .editable-cell:hover { background: var(--accent-bg) !important; }
+  .cell-input {
+    width: 100%; padding: 0.4rem 0.5rem; border: 2px solid var(--accent); border-radius: 4px;
+    background: var(--input-bg); color: var(--text); font-family: inherit; font-size: 0.875rem;
+    outline: none;
+  }
+  .cell-saved { animation: cellFlash 0.6s ease-out; }
+  @keyframes cellFlash { 0% { background: rgba(34,197,94,0.2); } 100% { background: transparent; } }
+
+  .block-wrapper { position: relative; padding: 0.5rem; margin: -0.5rem; border-radius: 8px; transition: background 0.15s; }
+  .block-wrapper:hover { background: var(--bg-hover); }
+  .block-actions {
+    position: absolute; top: 0.25rem; right: 0.25rem;
+    display: none; gap: 0.25rem;
+  }
+  .block-wrapper:hover .block-actions { display: flex; }
+  .block-actions button {
+    background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px;
+    padding: 0.2rem 0.4rem; cursor: pointer; font-size: 0.8rem; color: var(--text-secondary);
+  }
+  .block-actions button:hover { background: var(--bg-hover); color: var(--text); }
+  .block-actions .btn-del:hover { color: var(--danger); border-color: var(--danger-border); }
+
+  .editable-title { cursor: pointer; border-bottom: 2px dashed transparent; transition: border-color 0.15s; }
+  .editable-title:hover { border-bottom-color: var(--accent); }
+
+  .row-actions { white-space: nowrap; }
+
   /* ── Responsive ────────────────────────────────── */
   @media (max-width: 700px) {
     .header { padding: 0.5rem 1rem 0; }
@@ -443,6 +473,8 @@ let autoRefreshTimer = null;
 let allFiles = [], allDocs = [], allTables = [], allCalendars = [], workspaces = [];
 let currentModalType = '';
 let currentCalendarId = '', currentCalendarName = '';
+let currentDocId = '', currentDocBlocks = [];
+let currentTableId = '', currentTableColumns = [], currentTableRows = [];
 
 // ── Init ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
@@ -733,8 +765,65 @@ async function submitModal() {
           }),
         });
         toast('Event added!');
-        // Reload calendar detail
         openCalendar(currentCalendarId, currentCalendarName);
+        break;
+      }
+      case 'add_block':
+      case 'edit_block': {
+        const pageId = document.getElementById('modalPageId').value;
+        const blockId = document.getElementById('modalBlockId').value;
+        const blockType = document.getElementById('modalBlockType').value;
+        const content = document.getElementById('modalBlockContent').value;
+        if (!content.trim()) { toast('Content required', true); return; }
+
+        let data;
+        if (blockType === 'list') {
+          data = { items: content.split('\n').filter(Boolean) };
+        } else if (blockType === 'heading') {
+          data = { content, level: 2 };
+        } else if (blockType === 'code') {
+          data = { content, language: '' };
+        } else {
+          data = { content };
+        }
+
+        if (currentModalType === 'edit_block') {
+          await api(`/docs/pages/${pageId}/blocks/${blockId}`, {
+            method: 'PUT',
+            body: JSON.stringify({ type: blockType, data }),
+          });
+          toast('Block updated');
+        } else {
+          const maxOrder = currentDocBlocks.reduce((m, b) => Math.max(m, b.order_index || 0), -1);
+          await api(`/docs/pages/${pageId}/blocks`, {
+            method: 'POST',
+            body: JSON.stringify({ type: blockType, data, orderIndex: maxOrder + 1 }),
+          });
+          toast('Block added');
+        }
+        openDoc(pageId);
+        break;
+      }
+      case 'edit_event': {
+        const calId = document.getElementById('modalCalId').value;
+        const eventId = document.getElementById('modalEventId').value;
+        const title = document.getElementById('modalName').value.trim();
+        const desc = document.getElementById('modalContent')?.value?.trim();
+        const start = document.getElementById('modalStart').value;
+        const end = document.getElementById('modalEnd').value;
+        if (!title) { toast('Title required', true); return; }
+        if (!start || !end) { toast('Start and end required', true); return; }
+        await api(`/calendars/${calId}/events/${eventId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            title,
+            description: desc || null,
+            startTs: new Date(start).toISOString(),
+            endTs: new Date(end).toISOString(),
+          }),
+        });
+        toast('Event updated');
+        openCalendar(calId, currentCalendarName);
         break;
       }
     }
@@ -864,22 +953,157 @@ async function openDoc(id) {
     const data = await apiRaw('/docs/pages/' + id);
     if (!data) return;
     const { page, blocks } = data;
+    currentDocId = id;
+    currentDocBlocks = blocks;
     document.getElementById('docsListView').style.display = 'none';
     document.getElementById('docsDetailView').style.display = '';
 
-    let html = `<h2>${esc(page.title || 'Untitled')}</h2>`;
+    let html = `<h2 class="editable-title" onclick="editDocTitle('${id}', this)" title="Click to edit title">${esc(page.title || 'Untitled')}</h2>`;
     html += `<div class="doc-meta">${page.workspace_name ? `<span class="workspace-tag">${esc(page.workspace_name)}</span> &middot; ` : ''}Created ${fmtDate(page.created_at)}${page.updated_at ? ` &middot; Updated ${fmtDate(page.updated_at)}` : ''}</div>`;
     html += '<div class="doc-blocks">';
-    for (const block of blocks) html += renderBlock(block);
-    if (blocks.length === 0) html += '<p class="meta">This page has no content blocks.</p>';
+    for (const block of blocks) html += renderEditableBlock(block, id);
+    if (blocks.length === 0) html += '<p class="meta">This page has no content blocks yet.</p>';
     html += '</div>';
+    html += `<div style="margin-top:1rem; text-align:center;">
+      <button class="btn btn-sm" onclick="openBlockModal('${id}')">&#43; Add Block</button>
+    </div>`;
     document.getElementById('docDetail').innerHTML = html;
 
-    // Detail actions (export markdown link via browser cookie-auth endpoint)
     document.getElementById('docDetailActions').innerHTML = `
       <a href="${API}/docs/pages/${id}/export/markdown" class="btn btn-sm" title="Download as Markdown">&#8615; Download .md</a>
     `;
   } catch (e) { toast('Failed to load document', true); }
+}
+
+function renderEditableBlock(block, pageId) {
+  const actions = `<div class="block-actions">
+    <button onclick="openEditBlockModal('${pageId}','${block.id}')" title="Edit">&#9998;</button>
+    <button class="btn-del" onclick="deleteBlock('${pageId}','${block.id}')" title="Delete">&#10005;</button>
+  </div>`;
+  const d = block.data || {};
+  let content = '';
+  switch (block.type) {
+    case 'heading': {
+      const lv = Math.min(d.level || 2, 6);
+      content = `<h${lv} class="block-heading">${esc(d.content || '')}</h${lv}>`;
+      break;
+    }
+    case 'text':
+      content = `<p class="block-text">${renderMarkdown(d.content || '')}</p>`;
+      break;
+    case 'list': {
+      const items = d.items || (d.content ? d.content.split('\n') : []);
+      content = items.length ? `<ul class="block-list">${items.map(i => `<li>${esc(typeof i === 'string' ? i : (i.text || ''))}</li>`).join('')}</ul>` : '';
+      break;
+    }
+    case 'code':
+      content = `<pre class="block-code">${esc(d.content || d.code || '')}</pre>`;
+      break;
+    case 'image': {
+      const src = d.url || d.src || '';
+      content = src ? `<div class="block-image"><img src="${esc(src)}" alt="${esc(d.alt || 'Image')}"></div>` : '';
+      break;
+    }
+    case 'table': {
+      const rows = d.rows || [];
+      let t = '<div class="block-table"><div class="table-wrap"><table>';
+      if (d.headers) t += '<thead><tr>' + d.headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr></thead>';
+      t += '<tbody>';
+      for (const row of rows) {
+        const cells = Array.isArray(row) ? row : Object.values(row);
+        t += '<tr>' + cells.map(c => `<td>${esc(String(c))}</td>`).join('') + '</tr>';
+      }
+      t += '</tbody></table></div></div>';
+      content = t;
+      break;
+    }
+    default:
+      content = `<p class="block-text"><em>[${esc(block.type)}]</em> ${esc(d.content || JSON.stringify(d))}</p>`;
+  }
+  return `<div class="block block-wrapper">${actions}${content}</div>`;
+}
+
+async function editDocTitle(pageId, el) {
+  const current = el.textContent;
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.value = current;
+  input.className = 'cell-input';
+  input.style.fontSize = '1.5rem';
+  input.style.fontWeight = '600';
+  el.replaceWith(input);
+  input.focus();
+  input.select();
+
+  async function save() {
+    const val = input.value.trim();
+    if (!val || val === current) {
+      const h2 = document.createElement('h2');
+      h2.className = 'editable-title';
+      h2.textContent = current;
+      h2.setAttribute('onclick', `editDocTitle('${pageId}', this)`);
+      h2.title = 'Click to edit title';
+      input.replaceWith(h2);
+      return;
+    }
+    try {
+      await api('/docs/pages/' + pageId, { method: 'PUT', body: JSON.stringify({ title: val }) });
+      toast('Title updated');
+      openDoc(pageId);
+      loadAllData(true);
+    } catch (e) { toast('Failed to update title', true); }
+  }
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { input.value = current; input.blur(); }
+  });
+}
+
+function openBlockModal(pageId, blockId, blockData) {
+  const isEdit = !!blockId;
+  currentModalType = isEdit ? 'edit_block' : 'add_block';
+  const d = blockData?.data || {};
+  const blockType = blockData?.type || 'text';
+  const content = d.content || d.code || '';
+
+  document.getElementById('modalTitle').textContent = isEdit ? 'Edit Block' : 'Add Block';
+  document.getElementById('modalBody').innerHTML = `
+    <input type="hidden" id="modalPageId" value="${pageId}">
+    <input type="hidden" id="modalBlockId" value="${blockId || ''}">
+    <div class="field">
+      <label>Block Type</label>
+      <select id="modalBlockType">
+        <option value="text" ${blockType === 'text' ? 'selected' : ''}>Text</option>
+        <option value="heading" ${blockType === 'heading' ? 'selected' : ''}>Heading</option>
+        <option value="list" ${blockType === 'list' ? 'selected' : ''}>List (one item per line)</option>
+        <option value="code" ${blockType === 'code' ? 'selected' : ''}>Code</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Content</label>
+      <textarea id="modalBlockContent" rows="6" placeholder="Block content...">${esc(content)}</textarea>
+    </div>
+  `;
+  document.getElementById('modalSubmit').style.display = '';
+  document.getElementById('modalSubmit').textContent = isEdit ? 'Save' : 'Add';
+  document.getElementById('createModal').classList.add('show');
+  setTimeout(() => document.getElementById('modalBlockContent').focus(), 100);
+}
+
+function openEditBlockModal(pageId, blockId) {
+  const block = currentDocBlocks.find(b => b.id === blockId);
+  if (!block) return;
+  openBlockModal(pageId, blockId, block);
+}
+
+async function deleteBlock(pageId, blockId) {
+  if (!confirm('Delete this block?')) return;
+  try {
+    await api(`/docs/pages/${pageId}/blocks/${blockId}`, { method: 'DELETE' });
+    toast('Block deleted');
+    openDoc(pageId);
+  } catch (e) { toast('Delete failed', true); }
 }
 
 async function deleteDoc(id, title) {
@@ -969,6 +1193,9 @@ async function openTable(id) {
     const data = await apiRaw('/tables/' + id);
     if (!data) return;
     const { table: tbl, columns, rows } = data;
+    currentTableId = id;
+    currentTableColumns = columns;
+    currentTableRows = rows;
     document.getElementById('tablesListView').style.display = 'none';
     document.getElementById('tablesDetailView').style.display = '';
 
@@ -987,21 +1214,90 @@ async function openTable(id) {
     } else {
       html += '<div class="data-table-wrap"><div class="table-wrap"><table><thead><tr><th>#</th>';
       for (const col of columns) html += `<th>${esc(col.name)} <span class="col-type">${esc(col.type)}</span></th>`;
+      html += '<th class="row-actions" style="width:40px"></th>';
       html += '</tr></thead><tbody>';
       if (rows.length === 0) {
-        html += `<tr><td colspan="${columns.length + 1}" style="text-align:center; color:var(--text-muted); padding:2rem;">No rows yet</td></tr>`;
+        html += `<tr><td colspan="${columns.length + 2}" style="text-align:center; color:var(--text-muted); padding:2rem;">No rows yet — click "+ Add Row" below</td></tr>`;
       } else {
         rows.forEach((row, i) => {
           html += '<tr>';
           html += `<td class="meta">${i + 1}</td>`;
-          for (const col of columns) html += `<td>${renderCellValue(row.cells[col.id], col.type)}</td>`;
+          for (const col of columns) {
+            const raw = row.cells[col.id];
+            const val = raw === null || raw === undefined ? '' : (typeof raw === 'object' ? (raw.value !== undefined ? raw.value : JSON.stringify(raw)) : raw);
+            html += `<td class="editable-cell" onclick="editCell(this, '${id}','${row.id}','${col.id}','${col.type}')" data-value="${esc(String(val))}">${renderCellValue(raw, col.type)}</td>`;
+          }
+          html += `<td class="row-actions"><button class="btn-icon btn-del" onclick="deleteRow('${id}','${row.id}')" title="Delete row" style="color:var(--text-muted); font-size:0.8rem;">&#10005;</button></td>`;
           html += '</tr>';
         });
       }
       html += '</tbody></table></div></div>';
+      html += `<div style="margin-top:0.75rem; text-align:center;">
+        <button class="btn btn-sm" onclick="addRow('${id}')">&#43; Add Row</button>
+      </div>`;
     }
     document.getElementById('tableDetail').innerHTML = html;
   } catch (e) { toast('Failed to load table', true); }
+}
+
+function editCell(td, tableId, rowId, colId, colType) {
+  if (td.querySelector('input, select')) return; // already editing
+  const current = td.getAttribute('data-value') || '';
+
+  let input;
+  if (colType === 'boolean') {
+    input = document.createElement('select');
+    input.className = 'cell-input';
+    input.innerHTML = '<option value="">-</option><option value="true">True</option><option value="false">False</option>';
+    input.value = current;
+  } else {
+    input = document.createElement('input');
+    input.type = colType === 'number' ? 'number' : colType === 'date' ? 'date' : 'text';
+    input.className = 'cell-input';
+    input.value = current;
+  }
+
+  td.innerHTML = '';
+  td.appendChild(input);
+  input.focus();
+  if (input.select) input.select();
+
+  async function save() {
+    const val = input.value;
+    if (val === current) { openTable(tableId); return; }
+    try {
+      await api(`/tables/${tableId}/rows/${rowId}`, {
+        method: 'PUT',
+        body: JSON.stringify({ cells: { [colId]: val } }),
+      });
+      td.classList.add('cell-saved');
+      openTable(tableId);
+      toast('Saved');
+    } catch (e) { toast('Save failed', true); openTable(tableId); }
+  }
+
+  input.addEventListener('blur', save);
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') { e.preventDefault(); input.blur(); }
+    if (e.key === 'Escape') { openTable(tableId); }
+  });
+}
+
+async function addRow(tableId) {
+  try {
+    await api(`/tables/${tableId}/rows`, { method: 'POST', body: JSON.stringify({ cells: {} }) });
+    toast('Row added');
+    openTable(tableId);
+  } catch (e) { toast('Failed to add row', true); }
+}
+
+async function deleteRow(tableId, rowId) {
+  if (!confirm('Delete this row?')) return;
+  try {
+    await api(`/tables/${tableId}/rows/${rowId}`, { method: 'DELETE' });
+    toast('Row deleted');
+    openTable(tableId);
+  } catch (e) { toast('Delete failed', true); }
 }
 
 async function deleteTable(id, name) {
@@ -1073,14 +1369,18 @@ async function openCalendar(id, name) {
       html += '<div class="empty"><div class="icon">&#128197;</div><p>No events. Click "+ Add Event" to create one!</p></div>';
     } else {
       for (const ev of events) {
+        const evJson = esc(JSON.stringify({ id: ev.id, title: ev.title, description: ev.description || '', start_ts: ev.start_ts, end_ts: ev.end_ts }));
         html += `<div class="event-card">
           <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-            <div>
+            <div style="flex:1; min-width:0;">
               <div class="event-title">${esc(ev.title)}</div>
               <div class="event-time">&#128336; ${fmtDateTime(ev.start_ts)} &mdash; ${fmtDateTime(ev.end_ts)}</div>
               ${ev.description ? `<div class="event-desc">${esc(ev.description)}</div>` : ''}
             </div>
-            <button class="btn btn-sm btn-danger" onclick="deleteEvent('${id}','${ev.id}','${esc(ev.title)}')" title="Delete" style="flex-shrink:0; margin-left:0.5rem;">&#10005;</button>
+            <div style="display:flex; gap:0.25rem; flex-shrink:0; margin-left:0.5rem;">
+              <button class="btn btn-sm" onclick='openEditEventModal("${id}", ${evJson})' title="Edit">&#9998;</button>
+              <button class="btn btn-sm btn-danger" onclick="deleteEvent('${id}','${ev.id}','${esc(ev.title)}')" title="Delete">&#10005;</button>
+            </div>
           </div>
         </div>`;
       }
@@ -1102,6 +1402,25 @@ async function deleteEvent(calId, eventId, title) {
     toast('Event deleted');
     openCalendar(calId, currentCalendarName);
   } catch (e) { toast('Delete failed', true); }
+}
+
+function openEditEventModal(calId, ev) {
+  currentModalType = 'edit_event';
+  const startLocal = ev.start_ts ? new Date(ev.start_ts).toISOString().slice(0, 16) : '';
+  const endLocal = ev.end_ts ? new Date(ev.end_ts).toISOString().slice(0, 16) : '';
+  document.getElementById('modalTitle').textContent = 'Edit Event';
+  document.getElementById('modalBody').innerHTML = `
+    <input type="hidden" id="modalCalId" value="${calId}">
+    <input type="hidden" id="modalEventId" value="${ev.id}">
+    <div class="field"><label>Title</label><input type="text" id="modalName" value="${esc(ev.title)}" autofocus></div>
+    <div class="field"><label>Description</label><textarea id="modalContent">${esc(ev.description || '')}</textarea></div>
+    <div class="field"><label>Start</label><input type="datetime-local" id="modalStart" value="${startLocal}"></div>
+    <div class="field"><label>End</label><input type="datetime-local" id="modalEnd" value="${endLocal}"></div>
+  `;
+  document.getElementById('modalSubmit').style.display = '';
+  document.getElementById('modalSubmit').textContent = 'Save';
+  document.getElementById('createModal').classList.add('show');
+  setTimeout(() => document.getElementById('modalName').focus(), 100);
 }
 
 // ══════════════════════════════════════════════════

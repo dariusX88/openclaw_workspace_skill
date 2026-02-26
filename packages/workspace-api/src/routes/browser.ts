@@ -304,6 +304,34 @@ export async function browserRoutes(app: FastifyInstance) {
     return rows[0];
   });
 
+  // ── PUT /browser/api/docs/pages/:pageId/blocks/:blockId ───
+  app.put("/browser/api/docs/pages/:pageId/blocks/:blockId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { pageId, blockId } = req.params as any;
+    const body = req.body as any;
+    const sets: string[] = [];
+    const vals: any[] = [blockId];
+    let i = 2;
+    if (body.type !== undefined) { sets.push(`type=$${i++}`); vals.push(body.type); }
+    if (body.data !== undefined) { sets.push(`data=$${i++}`); vals.push(body.data); }
+    if (body.orderIndex !== undefined) { sets.push(`order_index=$${i++}`); vals.push(body.orderIndex); }
+    if (sets.length === 0) { reply.code(400); return { error: "nothing to update" }; }
+    const rows = await db.q(`update docs_blocks set ${sets.join(",")} where id=$1 returning id`, vals);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    await db.q("update docs_pages set updated_at=now() where id=$1", [pageId]);
+    return { ok: true, id: rows[0].id };
+  });
+
+  // ── DELETE /browser/api/docs/pages/:pageId/blocks/:blockId ──
+  app.delete("/browser/api/docs/pages/:pageId/blocks/:blockId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { pageId, blockId } = req.params as any;
+    const rows = await db.q("delete from docs_blocks where id=$1 and page_id=$2 returning id", [blockId, pageId]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    await db.q("update docs_pages set updated_at=now() where id=$1", [pageId]);
+    return { ok: true };
+  });
+
   // ── DELETE /browser/api/docs/pages/:id ────────
   app.delete("/browser/api/docs/pages/:id", async (req, reply) => {
     assertBrowserAuth(req);
@@ -422,6 +450,33 @@ export async function browserRoutes(app: FastifyInstance) {
     return { rowId };
   });
 
+  // ── PUT /browser/api/tables/:tableId/rows/:rowId ─────
+  app.put("/browser/api/tables/:tableId/rows/:rowId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { rowId } = req.params as any;
+    const body = req.body as any;
+    const cells = body.cells ?? {};
+    const check = await db.q("select id from table_rows where id=$1", [rowId]);
+    if (!check[0]) { reply.code(404); return { error: "row not found" }; }
+    for (const [columnId, value] of Object.entries(cells)) {
+      await db.q(
+        `insert into table_cells (row_id, column_id, value) values ($1,$2,$3)
+         on conflict (row_id, column_id) do update set value=$3`,
+        [rowId, columnId, value]
+      );
+    }
+    return { ok: true, rowId };
+  });
+
+  // ── DELETE /browser/api/tables/:tableId/rows/:rowId ──
+  app.delete("/browser/api/tables/:tableId/rows/:rowId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { rowId } = req.params as any;
+    const rows = await db.q("delete from table_rows where id=$1 returning id", [rowId]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
+
   // ── DELETE /browser/api/tables/:id ────────────
   app.delete("/browser/api/tables/:id", async (req, reply) => {
     assertBrowserAuth(req);
@@ -493,6 +548,24 @@ export async function browserRoutes(app: FastifyInstance) {
       [calendarId, body.title, body.description ?? null, body.startTs, body.endTs]
     );
     return { id: rows[0].id };
+  });
+
+  // ── PUT /browser/api/calendars/:calId/events/:eventId ─
+  app.put("/browser/api/calendars/:calId/events/:eventId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { eventId } = req.params as any;
+    const body = req.body as any;
+    const sets: string[] = [];
+    const vals: any[] = [eventId];
+    let i = 2;
+    if (body.title !== undefined) { sets.push(`title=$${i++}`); vals.push(body.title); }
+    if (body.description !== undefined) { sets.push(`description=$${i++}`); vals.push(body.description); }
+    if (body.startTs !== undefined) { sets.push(`start_ts=$${i++}`); vals.push(body.startTs); }
+    if (body.endTs !== undefined) { sets.push(`end_ts=$${i++}`); vals.push(body.endTs); }
+    if (sets.length === 0) { reply.code(400); return { error: "nothing to update" }; }
+    const rows = await db.q(`update events set ${sets.join(",")} where id=$1 returning id`, vals);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return rows[0];
   });
 
   // ── DELETE /browser/api/calendars/:id ─────────
