@@ -4,3 +4,4 @@ dist/
 .DS_Store
 firebase-debug.log
 *.log
+backups/*.sql.gz

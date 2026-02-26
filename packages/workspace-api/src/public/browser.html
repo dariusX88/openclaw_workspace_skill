@@ -7,21 +7,78 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+  :root {
+    --bg: #f8f9fb;
+    --bg-card: #fff;
+    --bg-hover: #f9fafb;
+    --bg-hover-row: #eff6ff;
+    --bg-code: #1a1a2e;
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --text-muted: #9ca3af;
+    --border: #e2e5ea;
+    --border-light: #f3f4f6;
+    --accent: #2563eb;
+    --accent-hover: #1d4ed8;
+    --accent-bg: #eff6ff;
+    --accent-text: #2563eb;
+    --badge-bg: #e5e7eb;
+    --badge-text: #374151;
+    --danger: #dc2626;
+    --danger-border: #fca5a5;
+    --danger-bg: #fef2f2;
+    --success: #16a34a;
+    --toast-bg: #1a1a2e;
+    --tab-border-top: #f3f4f6;
+    --input-bg: #fff;
+    --input-border: #d1d5db;
+    --modal-backdrop: rgba(0,0,0,0.4);
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  [data-theme="dark"] {
+    --bg: #0f1117;
+    --bg-card: #1a1d27;
+    --bg-hover: #22252f;
+    --bg-hover-row: #1e2a3a;
+    --bg-code: #0d0f16;
+    --text: #e2e5ea;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --border: #2d3140;
+    --border-light: #252830;
+    --accent: #3b82f6;
+    --accent-hover: #60a5fa;
+    --accent-bg: #1e2a3a;
+    --accent-text: #60a5fa;
+    --badge-bg: #2d3140;
+    --badge-text: #9ca3af;
+    --danger: #ef4444;
+    --danger-border: #7f1d1d;
+    --danger-bg: #1c1012;
+    --success: #22c55e;
+    --toast-bg: #e2e5ea;
+    --tab-border-top: #252830;
+    --input-bg: #22252f;
+    --input-border: #3d4150;
+    --modal-backdrop: rgba(0,0,0,0.7);
+    --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  }
+
   body {
     font-family: system-ui, -apple-system, sans-serif;
-    background: #f8f9fb;
-    color: #1a1a2e;
+    background: var(--bg);
+    color: var(--text);
     line-height: 1.5;
   }
 
   /* ── Header ────────────────────────────────────── */
   .header {
-    background: #fff;
-    border-bottom: 1px solid #e2e5ea;
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border);
     padding: 0.75rem 1.5rem 0;
     display: flex;
     flex-direction: column;
-    gap: 0;
   }
   .header-top {
     display: flex;
@@ -41,15 +98,25 @@
   .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.5rem;
     flex-wrap: wrap;
   }
+
+  /* ── Auto-refresh indicator ─────────────────────── */
+  .refresh-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: var(--success);
+    display: inline-block;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .refresh-label { font-size: 0.75rem; color: var(--text-muted); }
 
   /* ── Tabs ────────────────────────────────────────── */
   .tab-bar {
     display: flex;
     gap: 0;
-    border-top: 1px solid #f3f4f6;
+    border-top: 1px solid var(--tab-border-top);
     margin: 0 -1.5rem;
     padding: 0 1.5rem;
   }
@@ -57,140 +124,161 @@
     padding: 0.6rem 1rem;
     font-size: 0.875rem;
     font-weight: 500;
-    color: #6b7280;
+    color: var(--text-secondary);
     cursor: pointer;
     border-bottom: 2px solid transparent;
     transition: all 0.15s;
     background: none;
-    border-top: none;
-    border-left: none;
-    border-right: none;
+    border-top: none; border-left: none; border-right: none;
     font-family: inherit;
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
+    display: flex; align-items: center; gap: 0.4rem;
   }
-  .tab:hover { color: #374151; }
-  .tab.active { color: #2563eb; border-bottom-color: #2563eb; }
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
   .tab .badge {
-    background: #e5e7eb;
-    color: #374151;
-    font-size: 0.7rem;
-    font-weight: 600;
-    padding: 0.1rem 0.4rem;
-    border-radius: 9999px;
-    min-width: 1.2rem;
-    text-align: center;
+    background: var(--badge-bg);
+    color: var(--badge-text);
+    font-size: 0.7rem; font-weight: 600;
+    padding: 0.1rem 0.4rem; border-radius: 9999px;
+    min-width: 1.2rem; text-align: center;
   }
-  .tab.active .badge { background: #dbeafe; color: #2563eb; }
+  .tab.active .badge { background: var(--accent-bg); color: var(--accent-text); }
 
   /* ── Controls ──────────────────────────────────── */
-  select, .btn {
+  select, .btn, input[type="text"], input[type="datetime-local"], textarea {
     font-family: inherit;
     font-size: 0.875rem;
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
-    border: 1px solid #d1d5db;
-    background: #fff;
+    border: 1px solid var(--input-border);
+    background: var(--input-bg);
+    color: var(--text);
     cursor: pointer;
     transition: all 0.15s;
   }
+  input[type="text"], input[type="datetime-local"], textarea { cursor: text; }
+  textarea { resize: vertical; min-height: 80px; }
   select:hover, .btn:hover { border-color: #93a3b8; }
-  select:focus, .btn:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+  select:focus, .btn:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
 
-  .btn-primary { background: #2563eb; color: #fff; border-color: #2563eb; font-weight: 500; }
-  .btn-primary:hover { background: #1d4ed8; }
-  .btn-danger { background: #fff; color: #dc2626; border-color: #fca5a5; }
-  .btn-danger:hover { background: #fef2f2; border-color: #dc2626; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 500; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-danger { background: var(--bg-card); color: var(--danger); border-color: var(--danger-border); }
+  .btn-danger:hover { background: var(--danger-bg); border-color: var(--danger); }
   .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
-  .btn-ghost { background: none; border: none; color: #6b7280; cursor: pointer; padding: 0.3rem 0.5rem; font-family: inherit; font-size: 0.8rem; }
-  .btn-ghost:hover { color: #1a1a2e; }
-  .btn-back { background: none; border: 1px solid #d1d5db; border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; cursor: pointer; font-family: inherit; color: #374151; display: inline-flex; align-items: center; gap: 0.3rem; }
-  .btn-back:hover { background: #f3f4f6; }
+  .btn-ghost { background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 0.3rem 0.5rem; font-family: inherit; font-size: 0.8rem; }
+  .btn-ghost:hover { color: var(--text); }
+  .btn-back { background: none; border: 1px solid var(--input-border); border-radius: 6px; padding: 0.4rem 0.8rem; font-size: 0.85rem; cursor: pointer; font-family: inherit; color: var(--text-secondary); display: inline-flex; align-items: center; gap: 0.3rem; }
+  .btn-back:hover { background: var(--bg-hover); }
+  .btn-icon { background: none; border: none; cursor: pointer; font-size: 1rem; padding: 0.25rem; line-height: 1; color: var(--text-secondary); }
+  .btn-icon:hover { color: var(--text); }
 
   /* ── Main ──────────────────────────────────────── */
   .container { max-width: 1100px; margin: 0 auto; padding: 1.5rem; }
-
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
   /* ── Upload Zone ───────────────────────────────── */
   .upload-zone {
-    border: 2px dashed #d1d5db;
-    border-radius: 10px;
-    padding: 2rem;
-    text-align: center;
-    margin-bottom: 1.5rem;
-    transition: all 0.2s;
-    background: #fff;
-    cursor: pointer;
+    border: 2px dashed var(--input-border);
+    border-radius: 10px; padding: 2rem; text-align: center;
+    margin-bottom: 1.5rem; transition: all 0.2s;
+    background: var(--bg-card); cursor: pointer;
   }
-  .upload-zone.drag-over { border-color: #2563eb; background: #eff6ff; }
-  .upload-zone p { color: #6b7280; font-size: 0.9rem; }
+  .upload-zone.drag-over { border-color: var(--accent); background: var(--accent-bg); }
+  .upload-zone p { color: var(--text-secondary); font-size: 0.9rem; }
   .upload-zone .icon { font-size: 2rem; margin-bottom: 0.5rem; }
-  .upload-zone .hint { font-size: 0.8rem; color: #9ca3af; margin-top: 0.25rem; }
-
+  .upload-zone .hint { font-size: 0.8rem; color: var(--text-muted); margin-top: 0.25rem; }
   .upload-progress { display: none; margin-top: 0.75rem; }
-  .upload-progress .bar-track { height: 6px; background: #e5e7eb; border-radius: 3px; overflow: hidden; }
-  .upload-progress .bar-fill { height: 100%; background: #2563eb; border-radius: 3px; width: 0%; transition: width 0.2s; }
-  .upload-progress .bar-text { font-size: 0.8rem; color: #6b7280; margin-top: 0.25rem; }
+  .upload-progress .bar-track { height: 6px; background: var(--badge-bg); border-radius: 3px; overflow: hidden; }
+  .upload-progress .bar-fill { height: 100%; background: var(--accent); border-radius: 3px; width: 0%; transition: width 0.2s; }
+  .upload-progress .bar-text { font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.25rem; }
 
   /* ── Stats Bar ─────────────────────────────────── */
-  .stats { display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: #6b7280; }
-  .stats strong { color: #1a1a2e; }
+  .stats { display: flex; gap: 1.5rem; margin-bottom: 1rem; font-size: 0.85rem; color: var(--text-secondary); }
+  .stats strong { color: var(--text); }
 
   /* ── Table ─────────────────────────────────────── */
-  .table-wrap { background: #fff; border: 1px solid #e2e5ea; border-radius: 10px; overflow: hidden; }
+  .table-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   table { width: 100%; border-collapse: collapse; }
-  thead { background: #f9fafb; }
-  th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; border-bottom: 1px solid #e2e5ea; }
-  td { padding: 0.75rem 1rem; font-size: 0.875rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+  thead { background: var(--bg-hover); }
+  th { text-align: left; padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-secondary); border-bottom: 1px solid var(--border); }
+  td { padding: 0.75rem 1rem; font-size: 0.875rem; border-bottom: 1px solid var(--border-light); vertical-align: middle; }
   tr:last-child td { border-bottom: none; }
-  tr:hover td { background: #f9fafb; }
+  tr:hover td { background: var(--bg-hover); }
   tr.clickable { cursor: pointer; }
-  tr.clickable:hover td { background: #eff6ff; }
-
+  tr.clickable:hover td { background: var(--bg-hover-row); }
   .file-icon { margin-right: 0.4rem; }
   .filename { font-weight: 500; }
-  .meta { color: #9ca3af; font-size: 0.8rem; }
-  .workspace-tag { display: inline-block; background: #eff6ff; color: #2563eb; padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
+  .meta { color: var(--text-muted); font-size: 0.8rem; }
+  .workspace-tag { display: inline-block; background: var(--accent-bg); color: var(--accent-text); padding: 0.15rem 0.5rem; border-radius: 9999px; font-size: 0.75rem; font-weight: 500; }
   .actions { display: flex; gap: 0.4rem; }
 
   /* ── Empty State ───────────────────────────────── */
-  .empty { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
+  .empty { text-align: center; padding: 3rem 1rem; color: var(--text-muted); }
   .empty .icon { font-size: 3rem; margin-bottom: 0.5rem; }
 
   /* ── Doc Detail ────────────────────────────────── */
-  .doc-detail { background: #fff; border: 1px solid #e2e5ea; border-radius: 10px; padding: 2rem; }
+  .doc-detail { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 2rem; }
   .doc-detail h2 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-  .doc-meta { font-size: 0.8rem; color: #9ca3af; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid #f3f4f6; }
+  .doc-meta { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border-light); }
   .doc-blocks { line-height: 1.7; }
   .doc-blocks .block { margin-bottom: 1rem; }
   .doc-blocks .block-heading { font-size: 1.25rem; font-weight: 600; margin-bottom: 0.5rem; }
-  .doc-blocks .block-text { color: #374151; }
+  .doc-blocks .block-text { color: var(--text-secondary); white-space: pre-wrap; }
   .doc-blocks .block-list { padding-left: 1.5rem; }
   .doc-blocks .block-list li { margin-bottom: 0.25rem; }
-  .doc-blocks .block-code { background: #1a1a2e; color: #e2e5ea; padding: 1rem; border-radius: 8px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; }
+  .doc-blocks .block-code { background: var(--bg-code); color: #e2e5ea; padding: 1rem; border-radius: 8px; font-family: 'SF Mono', Consolas, monospace; font-size: 0.85rem; overflow-x: auto; white-space: pre-wrap; }
   .doc-blocks .block-image img { max-width: 100%; border-radius: 8px; }
   .doc-blocks .block-table table { margin: 0; }
-  .doc-blocks .block-table td, .doc-blocks .block-table th { padding: 0.5rem 0.75rem; border: 1px solid #e2e5ea; }
+  .doc-blocks .block-table td, .doc-blocks .block-table th { padding: 0.5rem 0.75rem; border: 1px solid var(--border); }
 
   /* ── Table Detail ──────────────────────────────── */
   .data-table-wrap { overflow-x: auto; }
   .data-table-wrap table { min-width: 100%; }
   .data-table-wrap th { white-space: nowrap; }
-  .data-table-wrap .col-type { font-weight: 400; color: #9ca3af; font-size: 0.7rem; text-transform: lowercase; }
+  .data-table-wrap .col-type { font-weight: 400; color: var(--text-muted); font-size: 0.7rem; text-transform: lowercase; }
 
   /* ── Calendar Events ───────────────────────────── */
-  .event-card { background: #fff; border: 1px solid #e2e5ea; border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
+  .event-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 0.75rem; }
   .event-card .event-title { font-weight: 600; font-size: 1rem; }
-  .event-card .event-time { font-size: 0.85rem; color: #2563eb; margin-top: 0.2rem; }
-  .event-card .event-desc { font-size: 0.875rem; color: #6b7280; margin-top: 0.4rem; }
+  .event-card .event-time { font-size: 0.85rem; color: var(--accent); margin-top: 0.2rem; }
+  .event-card .event-desc { font-size: 0.875rem; color: var(--text-secondary); margin-top: 0.4rem; white-space: pre-wrap; }
+
+  /* ── Modal ───────────────────────────────────────── */
+  .modal-backdrop {
+    display: none;
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: var(--modal-backdrop); z-index: 200;
+    justify-content: center; align-items: center;
+  }
+  .modal-backdrop.show { display: flex; }
+  .modal {
+    background: var(--bg-card);
+    border-radius: 12px;
+    padding: 1.5rem;
+    width: 100%; max-width: 480px;
+    box-shadow: var(--shadow);
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 1rem; }
+  .modal .field { margin-bottom: 1rem; }
+  .modal label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.3rem; }
+  .modal input, .modal select, .modal textarea { width: 100%; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 0.5rem; margin-top: 1.25rem; }
 
   /* ── Toast ─────────────────────────────────────── */
-  .toast { position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: #fff; padding: 0.75rem 1.25rem; border-radius: 8px; font-size: 0.875rem; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transform: translateY(100px); opacity: 0; transition: all 0.3s; z-index: 100; }
+  .toast {
+    position: fixed; bottom: 1.5rem; right: 1.5rem;
+    background: var(--toast-bg); color: var(--bg);
+    padding: 0.75rem 1.25rem; border-radius: 8px;
+    font-size: 0.875rem; box-shadow: var(--shadow);
+    transform: translateY(100px); opacity: 0;
+    transition: all 0.3s; z-index: 300;
+  }
   .toast.show { transform: translateY(0); opacity: 1; }
-  .toast.error { background: #dc2626; }
+  .toast.error { background: var(--danger); color: #fff; }
 
   /* ── Responsive ────────────────────────────────── */
   @media (max-width: 700px) {
@@ -200,6 +288,7 @@
     .hide-mobile { display: none; }
     .doc-detail { padding: 1.25rem; }
     .tab { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+    .modal { margin: 1rem; }
   }
 </style>
 </head>
@@ -209,11 +298,15 @@
   <div class="header-top">
     <h1>&#128188; Workspace</h1>
     <div class="header-actions">
-      <select id="wsFilter">
+      <span class="refresh-dot" id="refreshDot" title="Auto-refresh active"></span>
+      <span class="refresh-label" id="refreshLabel">live</span>
+      <select id="wsFilter" style="min-width: 140px;">
         <option value="">All Workspaces</option>
       </select>
-      <button class="btn btn-primary" id="uploadBtn" onclick="triggerUpload()">&#43; Upload</button>
-      <button class="btn-ghost" onclick="logout()" title="Sign out">&#9211; Logout</button>
+      <button class="btn btn-sm" id="createBtn" onclick="openCreateModal()">&#43; Create</button>
+      <button class="btn btn-primary btn-sm" id="uploadBtn" onclick="triggerUpload()">&#8679; Upload</button>
+      <button class="btn-icon" onclick="toggleDarkMode()" title="Toggle dark mode" id="themeToggle">&#9790;</button>
+      <button class="btn-ghost" onclick="logout()" title="Sign out">&#9211;</button>
     </div>
   </div>
   <div class="tab-bar">
@@ -238,82 +331,61 @@
       </div>
     </div>
     <input type="file" id="fileInput" hidden multiple>
-
     <div class="stats" id="fileStats"></div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr>
-            <th>File</th>
-            <th class="hide-mobile">Type</th>
-            <th>Size</th>
-            <th class="hide-mobile">Workspace</th>
-            <th class="hide-mobile">Uploaded</th>
-            <th>Actions</th>
-          </tr>
+          <tr><th>File</th><th class="hide-mobile">Type</th><th>Size</th><th class="hide-mobile">Workspace</th><th class="hide-mobile">Uploaded</th><th>Actions</th></tr>
         </thead>
         <tbody id="fileList"></tbody>
       </table>
       <div class="empty" id="emptyFiles" style="display:none">
-        <div class="icon">&#128194;</div>
-        <p>No files yet. Upload something!</p>
+        <div class="icon">&#128194;</div><p>No files yet. Upload something!</p>
       </div>
     </div>
   </div>
 
   <!-- ═══ DOCS TAB ═══ -->
   <div class="tab-content" id="tab-docs">
-    <!-- List view -->
     <div id="docsListView">
       <div class="stats" id="docStats"></div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Title</th>
-              <th class="hide-mobile">Workspace</th>
-              <th class="hide-mobile">Created</th>
-              <th>Updated</th>
-            </tr>
+            <tr><th>Title</th><th class="hide-mobile">Workspace</th><th class="hide-mobile">Created</th><th>Updated</th><th style="width:60px">Actions</th></tr>
           </thead>
           <tbody id="docList"></tbody>
         </table>
         <div class="empty" id="emptyDocs" style="display:none">
-          <div class="icon">&#128209;</div>
-          <p>No documents yet. Ask OpenClaw to create one!</p>
+          <div class="icon">&#128209;</div><p>No documents yet. Create one or ask OpenClaw!</p>
         </div>
       </div>
     </div>
-    <!-- Detail view -->
     <div id="docsDetailView" style="display:none">
-      <button class="btn-back" onclick="showDocsList()">&#8592; Back to docs</button>
-      <div class="doc-detail" id="docDetail" style="margin-top:1rem"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <button class="btn-back" onclick="showDocsList()">&#8592; Back to docs</button>
+        <div class="actions" id="docDetailActions"></div>
+      </div>
+      <div class="doc-detail" id="docDetail"></div>
     </div>
   </div>
 
   <!-- ═══ TABLES TAB ═══ -->
   <div class="tab-content" id="tab-tables">
-    <!-- List view -->
     <div id="tablesListView">
       <div class="stats" id="tableStats"></div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Table Name</th>
-              <th class="hide-mobile">Workspace</th>
-              <th>Created</th>
-            </tr>
+            <tr><th>Table Name</th><th class="hide-mobile">Workspace</th><th>Created</th><th style="width:60px">Actions</th></tr>
           </thead>
           <tbody id="tableList"></tbody>
         </table>
         <div class="empty" id="emptyTables" style="display:none">
-          <div class="icon">&#128202;</div>
-          <p>No tables yet. Ask OpenClaw to create one!</p>
+          <div class="icon">&#128202;</div><p>No tables yet. Create one or ask OpenClaw!</p>
         </div>
       </div>
     </div>
-    <!-- Detail view -->
     <div id="tablesDetailView" style="display:none">
       <button class="btn-back" onclick="showTablesList()">&#8592; Back to tables</button>
       <div id="tableDetail" style="margin-top:1rem"></div>
@@ -322,32 +394,41 @@
 
   <!-- ═══ CALENDAR TAB ═══ -->
   <div class="tab-content" id="tab-calendar">
-    <!-- List view -->
     <div id="calendarListView">
       <div class="stats" id="calStats"></div>
       <div class="table-wrap">
         <table>
           <thead>
-            <tr>
-              <th>Calendar</th>
-              <th class="hide-mobile">Workspace</th>
-            </tr>
+            <tr><th>Calendar</th><th class="hide-mobile">Workspace</th><th style="width:60px">Actions</th></tr>
           </thead>
           <tbody id="calendarList"></tbody>
         </table>
         <div class="empty" id="emptyCalendars" style="display:none">
-          <div class="icon">&#128197;</div>
-          <p>No calendars yet. Ask OpenClaw to create one!</p>
+          <div class="icon">&#128197;</div><p>No calendars yet. Create one or ask OpenClaw!</p>
         </div>
       </div>
     </div>
-    <!-- Detail view -->
     <div id="calendarDetailView" style="display:none">
-      <button class="btn-back" onclick="showCalendarsList()">&#8592; Back to calendars</button>
-      <div id="calendarDetail" style="margin-top:1rem"></div>
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+        <button class="btn-back" onclick="showCalendarsList()">&#8592; Back to calendars</button>
+        <button class="btn btn-sm" onclick="openAddEventModal()">&#43; Add Event</button>
+      </div>
+      <div id="calendarDetail"></div>
     </div>
   </div>
 
+</div>
+
+<!-- ═══ CREATE MODAL ═══ -->
+<div class="modal-backdrop" id="createModal">
+  <div class="modal">
+    <h3 id="modalTitle">Create</h3>
+    <div id="modalBody"></div>
+    <div class="modal-actions">
+      <button class="btn btn-sm" onclick="closeModal('createModal')">Cancel</button>
+      <button class="btn btn-primary btn-sm" id="modalSubmit" onclick="submitModal()">Create</button>
+    </div>
+  </div>
 </div>
 
 <!-- Toast -->
@@ -356,35 +437,58 @@
 <script>
 const API = '/browser/api';
 let currentTab = 'files';
+let autoRefreshTimer = null;
 
 // Data stores
-let allFiles = [];
-let allDocs = [];
-let allTables = [];
-let allCalendars = [];
-let workspaces = [];
+let allFiles = [], allDocs = [], allTables = [], allCalendars = [], workspaces = [];
+let currentModalType = '';
+let currentCalendarId = '', currentCalendarName = '';
 
 // ── Init ────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
+  // Restore dark mode
+  if (localStorage.getItem('ws-dark') === '1') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    document.getElementById('themeToggle').textContent = '\u2600';
+  }
   await loadWorkspaces();
   await loadAllData();
   setupDragDrop();
   document.getElementById('wsFilter').addEventListener('change', () => loadAllData());
   document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+  startAutoRefresh();
 });
+
+// ── Dark Mode ────────────────────────────────────────
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.removeItem('ws-dark');
+    document.getElementById('themeToggle').textContent = '\u263E';
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('ws-dark', '1');
+    document.getElementById('themeToggle').textContent = '\u2600';
+  }
+}
+
+// ── Auto-Refresh (30s) ──────────────────────────────
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => {
+    loadAllData(true);
+  }, 30000);
+}
 
 // ── Tab Switching ───────────────────────────────────
 function switchTab(tab) {
   currentTab = tab;
-  // Update tab buttons
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   document.querySelector(`.tab[data-tab="${tab}"]`).classList.add('active');
-  // Update content
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
   document.getElementById('tab-' + tab).classList.add('active');
-  // Show/hide upload button (only for files tab)
   document.getElementById('uploadBtn').style.display = tab === 'files' ? '' : 'none';
-  // Reset detail views
   if (tab === 'docs') showDocsList();
   if (tab === 'tables') showTablesList();
   if (tab === 'calendar') showCalendarsList();
@@ -392,7 +496,11 @@ function switchTab(tab) {
 
 // ── API Helpers ─────────────────────────────────────
 async function api(path, opts = {}) {
-  const res = await fetch(API + path, { credentials: 'same-origin', ...opts });
+  const res = await fetch(API + path, {
+    credentials: 'same-origin',
+    ...opts,
+    headers: { 'Content-Type': 'application/json', ...(opts.headers || {}) },
+  });
   if (res.status === 401) { window.location.href = '/browser'; return null; }
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText }));
@@ -401,29 +509,32 @@ async function api(path, opts = {}) {
   return res.json();
 }
 
+async function apiRaw(path, opts = {}) {
+  const res = await fetch(API + path, { credentials: 'same-origin', ...opts });
+  if (res.status === 401) { window.location.href = '/browser'; return null; }
+  if (!res.ok) throw new Error('Request failed');
+  return res.json();
+}
+
 // ── Load All Data ───────────────────────────────────
-async function loadAllData() {
+async function loadAllData(silent) {
   const wsId = document.getElementById('wsFilter').value;
   const qs = wsId ? `?workspaceId=${wsId}` : '';
-
-  // Load all in parallel
-  const [filesData, docsData, tablesData, calendarsData] = await Promise.all([
-    api('/files' + qs).catch(() => ({ files: [] })),
-    api('/docs/pages' + qs).catch(() => ({ pages: [] })),
-    api('/tables' + qs).catch(() => ({ tables: [] })),
-    api('/calendars' + qs).catch(() => ({ calendars: [] })),
-  ]);
-
-  allFiles = filesData?.files || [];
-  allDocs = docsData?.pages || [];
-  allTables = tablesData?.tables || [];
-  allCalendars = calendarsData?.calendars || [];
-
-  renderFiles();
-  renderDocs();
-  renderTables();
-  renderCalendars();
-  updateBadges();
+  try {
+    const [filesData, docsData, tablesData, calendarsData] = await Promise.all([
+      apiRaw('/files' + qs).catch(() => ({ files: [] })),
+      apiRaw('/docs/pages' + qs).catch(() => ({ pages: [] })),
+      apiRaw('/tables' + qs).catch(() => ({ tables: [] })),
+      apiRaw('/calendars' + qs).catch(() => ({ calendars: [] })),
+    ]);
+    allFiles = filesData?.files || [];
+    allDocs = docsData?.pages || [];
+    allTables = tablesData?.tables || [];
+    allCalendars = calendarsData?.calendars || [];
+    renderFiles(); renderDocs(); renderTables(); renderCalendars(); updateBadges();
+  } catch (e) {
+    if (!silent) toast('Failed to load data', true);
+  }
 }
 
 function updateBadges() {
@@ -436,7 +547,7 @@ function updateBadges() {
 // ── Load Workspaces ─────────────────────────────────
 async function loadWorkspaces() {
   try {
-    const data = await api('/workspaces');
+    const data = await apiRaw('/workspaces');
     if (!data) return;
     workspaces = data.workspaces || [];
     const sel = document.getElementById('wsFilter');
@@ -446,50 +557,230 @@ async function loadWorkspaces() {
       opt.textContent = ws.name;
       sel.appendChild(opt);
     });
+  } catch (e) { console.error('Failed to load workspaces:', e); }
+}
+
+// ══════════════════════════════════════════════════
+//  MODAL SYSTEM
+// ══════════════════════════════════════════════════
+
+function openCreateModal() {
+  const items = [
+    { type: 'workspace', label: 'Workspace', icon: '&#128188;' },
+    { type: 'doc', label: 'Document', icon: '&#128209;' },
+    { type: 'table', label: 'Table', icon: '&#128202;' },
+    { type: 'calendar', label: 'Calendar', icon: '&#128197;' },
+  ];
+
+  document.getElementById('modalTitle').innerHTML = '&#43; Create New';
+  document.getElementById('modalBody').innerHTML = `
+    <div style="display:grid; grid-template-columns:1fr 1fr; gap:0.5rem;">
+      ${items.map(i => `
+        <button class="btn" style="padding:1rem; text-align:center;" onclick="openSpecificCreate('${i.type}')">
+          <div style="font-size:1.5rem; margin-bottom:0.25rem;">${i.icon}</div>
+          <div>${i.label}</div>
+        </button>
+      `).join('')}
+    </div>
+  `;
+  document.getElementById('modalSubmit').style.display = 'none';
+  document.getElementById('createModal').classList.add('show');
+}
+
+function openSpecificCreate(type) {
+  currentModalType = type;
+  const wsOptions = workspaces.map(w => `<option value="${w.id}">${esc(w.name)}</option>`).join('');
+  const selectedWs = document.getElementById('wsFilter').value;
+
+  switch (type) {
+    case 'workspace':
+      document.getElementById('modalTitle').textContent = 'Create Workspace';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="field"><label>Name</label><input type="text" id="modalName" placeholder="My Workspace" autofocus></div>
+      `;
+      break;
+    case 'doc':
+      document.getElementById('modalTitle').textContent = 'Create Document';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="field"><label>Workspace</label><select id="modalWs">${wsOptions}</select></div>
+        <div class="field"><label>Title</label><input type="text" id="modalName" placeholder="Document title" autofocus></div>
+        <div class="field"><label>Content (optional)</label><textarea id="modalContent" placeholder="Start writing..."></textarea></div>
+      `;
+      if (selectedWs) document.getElementById('modalWs').value = selectedWs;
+      break;
+    case 'table':
+      document.getElementById('modalTitle').textContent = 'Create Table';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="field"><label>Workspace</label><select id="modalWs">${wsOptions}</select></div>
+        <div class="field"><label>Table Name</label><input type="text" id="modalName" placeholder="My Table" autofocus></div>
+        <div class="field"><label>Columns (comma-separated)</label><input type="text" id="modalColumns" placeholder="Name, Email, Status"></div>
+      `;
+      if (selectedWs) document.getElementById('modalWs').value = selectedWs;
+      break;
+    case 'calendar':
+      document.getElementById('modalTitle').textContent = 'Create Calendar';
+      document.getElementById('modalBody').innerHTML = `
+        <div class="field"><label>Workspace</label><select id="modalWs">${wsOptions}</select></div>
+        <div class="field"><label>Calendar Name</label><input type="text" id="modalName" placeholder="Team Calendar" autofocus></div>
+      `;
+      if (selectedWs) document.getElementById('modalWs').value = selectedWs;
+      break;
+  }
+  document.getElementById('modalSubmit').style.display = '';
+  document.getElementById('modalSubmit').textContent = 'Create';
+  document.getElementById('createModal').classList.add('show');
+  setTimeout(() => {
+    const f = document.getElementById('modalName');
+    if (f) f.focus();
+  }, 100);
+}
+
+function openAddEventModal() {
+  currentModalType = 'event';
+  document.getElementById('modalTitle').textContent = 'Add Event';
+  document.getElementById('modalBody').innerHTML = `
+    <div class="field"><label>Title</label><input type="text" id="modalName" placeholder="Event title" autofocus></div>
+    <div class="field"><label>Description (optional)</label><textarea id="modalContent" placeholder="Details..."></textarea></div>
+    <div class="field"><label>Start</label><input type="datetime-local" id="modalStart"></div>
+    <div class="field"><label>End</label><input type="datetime-local" id="modalEnd"></div>
+  `;
+  document.getElementById('modalSubmit').style.display = '';
+  document.getElementById('modalSubmit').textContent = 'Add Event';
+  document.getElementById('createModal').classList.add('show');
+  setTimeout(() => document.getElementById('modalName').focus(), 100);
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+  currentModalType = '';
+}
+
+async function submitModal() {
+  try {
+    switch (currentModalType) {
+      case 'workspace': {
+        const name = document.getElementById('modalName').value.trim();
+        if (!name) { toast('Name required', true); return; }
+        await api('/workspaces', { method: 'POST', body: JSON.stringify({ name }) });
+        toast('Workspace created!');
+        // Refresh workspace list
+        const sel = document.getElementById('wsFilter');
+        sel.innerHTML = '<option value="">All Workspaces</option>';
+        workspaces = [];
+        await loadWorkspaces();
+        break;
+      }
+      case 'doc': {
+        const wsId = document.getElementById('modalWs').value;
+        const title = document.getElementById('modalName').value.trim();
+        const content = document.getElementById('modalContent')?.value?.trim();
+        if (!wsId) { toast('Select workspace', true); return; }
+        if (!title) { toast('Title required', true); return; }
+        const res = await api('/docs/pages', { method: 'POST', body: JSON.stringify({ workspaceId: wsId, title }) });
+        // If content was provided, add a text block
+        if (content && res?.id) {
+          await api(`/docs/pages/${res.id}/blocks`, {
+            method: 'POST',
+            body: JSON.stringify({ type: 'text', data: { content }, orderIndex: 0 }),
+          });
+        }
+        toast('Document created!');
+        break;
+      }
+      case 'table': {
+        const wsId = document.getElementById('modalWs').value;
+        const name = document.getElementById('modalName').value.trim();
+        const cols = document.getElementById('modalColumns').value;
+        if (!wsId) { toast('Select workspace', true); return; }
+        if (!name) { toast('Name required', true); return; }
+        const res = await api('/tables', { method: 'POST', body: JSON.stringify({ workspaceId: wsId, name }) });
+        // Add columns
+        if (cols && res?.id) {
+          const colNames = cols.split(',').map(c => c.trim()).filter(Boolean);
+          for (let i = 0; i < colNames.length; i++) {
+            await api(`/tables/${res.id}/columns`, {
+              method: 'POST',
+              body: JSON.stringify({ name: colNames[i], type: 'text', orderIndex: i }),
+            });
+          }
+        }
+        toast('Table created!');
+        break;
+      }
+      case 'calendar': {
+        const wsId = document.getElementById('modalWs').value;
+        const name = document.getElementById('modalName').value.trim();
+        if (!wsId) { toast('Select workspace', true); return; }
+        if (!name) { toast('Name required', true); return; }
+        await api('/calendars', { method: 'POST', body: JSON.stringify({ workspaceId: wsId, name }) });
+        toast('Calendar created!');
+        break;
+      }
+      case 'event': {
+        const title = document.getElementById('modalName').value.trim();
+        const desc = document.getElementById('modalContent')?.value?.trim();
+        const start = document.getElementById('modalStart').value;
+        const end = document.getElementById('modalEnd').value;
+        if (!title) { toast('Title required', true); return; }
+        if (!start || !end) { toast('Start and end time required', true); return; }
+        await api(`/calendars/${currentCalendarId}/events`, {
+          method: 'POST',
+          body: JSON.stringify({
+            title,
+            description: desc || null,
+            startTs: new Date(start).toISOString(),
+            endTs: new Date(end).toISOString(),
+          }),
+        });
+        toast('Event added!');
+        // Reload calendar detail
+        openCalendar(currentCalendarId, currentCalendarName);
+        break;
+      }
+    }
+    closeModal('createModal');
+    await loadAllData();
   } catch (e) {
-    console.error('Failed to load workspaces:', e);
+    toast('Error: ' + e.message, true);
   }
 }
 
-// ═══════════════════════════════════════════════════
+// Handle Enter key in modals
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && document.getElementById('createModal').classList.contains('show')) {
+    if (e.target.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      submitModal();
+    }
+  }
+  if (e.key === 'Escape' && document.getElementById('createModal').classList.contains('show')) {
+    closeModal('createModal');
+  }
+});
+
+// ══════════════════════════════════════════════════
 //  FILES
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 
 function renderFiles() {
   const tbody = document.getElementById('fileList');
   const empty = document.getElementById('emptyFiles');
   const stats = document.getElementById('fileStats');
-
-  if (allFiles.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    stats.innerHTML = '';
-    return;
-  }
+  if (allFiles.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; stats.innerHTML = ''; return; }
   empty.style.display = 'none';
-
   const totalSize = allFiles.reduce((s, f) => s + Number(f.size_bytes || 0), 0);
-  stats.innerHTML = `<span><strong>${allFiles.length}</strong> file${allFiles.length !== 1 ? 's' : ''}</span>
-                     <span><strong>${fmtSize(totalSize)}</strong> total</span>`;
-
+  stats.innerHTML = `<span><strong>${allFiles.length}</strong> file${allFiles.length !== 1 ? 's' : ''}</span><span><strong>${fmtSize(totalSize)}</strong> total</span>`;
   tbody.innerHTML = allFiles.map(f => `
     <tr>
-      <td>
-        <span class="file-icon">${fileIcon(f.content_type)}</span>
-        <span class="filename">${esc(f.filename)}</span>
-      </td>
+      <td><span class="file-icon">${fileIcon(f.content_type)}</span><span class="filename">${esc(f.filename)}</span></td>
       <td class="hide-mobile meta">${esc(shortType(f.content_type))}</td>
       <td><span class="meta">${fmtSize(f.size_bytes)}</span></td>
-      <td class="hide-mobile">
-        ${f.workspace_name ? `<span class="workspace-tag">${esc(f.workspace_name)}</span>` : '<span class="meta">-</span>'}
-      </td>
+      <td class="hide-mobile">${f.workspace_name ? `<span class="workspace-tag">${esc(f.workspace_name)}</span>` : '<span class="meta">-</span>'}</td>
       <td class="hide-mobile meta">${fmtDate(f.created_at)}</td>
-      <td>
-        <div class="actions">
-          <a href="${API}/files/${f.id}/download" class="btn btn-sm" title="Download">&#8615;</a>
-          <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.id}','${esc(f.filename)}')" title="Delete">&#10005;</button>
-        </div>
-      </td>
+      <td><div class="actions">
+        <a href="${API}/files/${f.id}/download" class="btn btn-sm" title="Download">&#8615;</a>
+        <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.id}','${esc(f.filename)}')" title="Delete">&#10005;</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -497,105 +788,67 @@ function renderFiles() {
 function triggerUpload() {
   const wsId = document.getElementById('wsFilter').value;
   if (!wsId && workspaces.length > 0) { toast('Select a workspace first', true); return; }
-  if (workspaces.length === 0) { toast('Create a workspace first (via API or OpenClaw)', true); return; }
+  if (workspaces.length === 0) { toast('Create a workspace first', true); return; }
   document.getElementById('fileInput').click();
 }
-
-function handleFileSelect(e) {
-  const files = e.target.files;
-  if (files.length) uploadFiles(files);
-  e.target.value = '';
-}
-
+function handleFileSelect(e) { if (e.target.files.length) uploadFiles(e.target.files); e.target.value = ''; }
 function setupDragDrop() {
   const zone = document.getElementById('dropZone');
-  ['dragenter', 'dragover'].forEach(evt =>
-    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); })
-  );
-  ['dragleave', 'drop'].forEach(evt =>
-    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); })
-  );
-  zone.addEventListener('drop', e => {
-    const files = e.dataTransfer.files;
-    if (files.length) uploadFiles(files);
-  });
+  ['dragenter','dragover'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); }));
+  ['dragleave','drop'].forEach(evt => zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); }));
+  zone.addEventListener('drop', e => { if (e.dataTransfer.files.length) uploadFiles(e.dataTransfer.files); });
 }
-
 async function uploadFiles(fileList) {
   const wsId = document.getElementById('wsFilter').value;
   if (!wsId) { toast('Select a workspace first', true); return; }
-
   const progress = document.getElementById('uploadProgress');
   const bar = document.getElementById('uploadBar');
   const text = document.getElementById('uploadText');
   progress.style.display = 'block';
-
   let uploaded = 0;
-  const total = fileList.length;
-
   for (const file of fileList) {
-    text.textContent = `Uploading ${file.name} (${uploaded + 1}/${total})...`;
-    bar.style.width = `${(uploaded / total) * 100}%`;
+    text.textContent = `Uploading ${file.name} (${uploaded + 1}/${fileList.length})...`;
+    bar.style.width = `${(uploaded / fileList.length) * 100}%`;
     try {
-      const form = new FormData();
-      form.append('file', file);
-      form.append('workspaceId', wsId);
-      await fetch(API + '/files?workspaceId=' + wsId, {
-        method: 'POST', body: form, credentials: 'same-origin',
-      }).then(r => {
-        if (r.status === 401) { window.location.href = '/browser'; return; }
-        if (!r.ok) throw new Error('Upload failed');
-        return r.json();
-      });
+      const form = new FormData(); form.append('file', file); form.append('workspaceId', wsId);
+      const r = await fetch(API + '/files?workspaceId=' + wsId, { method: 'POST', body: form, credentials: 'same-origin' });
+      if (r.status === 401) { window.location.href = '/browser'; return; }
+      if (!r.ok) throw new Error('Upload failed');
       uploaded++;
-    } catch (e) { toast(`Failed to upload ${file.name}`, true); }
+    } catch (e) { toast(`Failed: ${file.name}`, true); }
   }
-
   bar.style.width = '100%';
   text.textContent = `Done! ${uploaded} file${uploaded !== 1 ? 's' : ''} uploaded.`;
   toast(`Uploaded ${uploaded} file${uploaded !== 1 ? 's' : ''}`);
   setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 2000);
   await loadAllData();
 }
-
 async function deleteFile(id, name) {
-  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
-  try {
-    await api('/files/' + id, { method: 'DELETE' });
-    toast(`Deleted ${name}`);
-    await loadAllData();
-  } catch (e) { toast('Delete failed: ' + e.message, true); }
+  if (!confirm(`Delete "${name}"?`)) return;
+  try { await api('/files/' + id, { method: 'DELETE' }); toast(`Deleted ${name}`); await loadAllData(); }
+  catch (e) { toast('Delete failed', true); }
 }
 
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 //  DOCS
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 
 function renderDocs() {
   const tbody = document.getElementById('docList');
   const empty = document.getElementById('emptyDocs');
   const stats = document.getElementById('docStats');
-
-  if (allDocs.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    stats.innerHTML = '';
-    return;
-  }
+  if (allDocs.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; stats.innerHTML = ''; return; }
   empty.style.display = 'none';
   stats.innerHTML = `<span><strong>${allDocs.length}</strong> document${allDocs.length !== 1 ? 's' : ''}</span>`;
-
   tbody.innerHTML = allDocs.map(d => `
     <tr class="clickable" onclick="openDoc('${d.id}')">
-      <td>
-        <span class="file-icon">&#128209;</span>
-        <span class="filename">${esc(d.title || 'Untitled')}</span>
-      </td>
-      <td class="hide-mobile">
-        ${d.workspace_name ? `<span class="workspace-tag">${esc(d.workspace_name)}</span>` : '<span class="meta">-</span>'}
-      </td>
+      <td><span class="file-icon">&#128209;</span><span class="filename">${esc(d.title || 'Untitled')}</span></td>
+      <td class="hide-mobile">${d.workspace_name ? `<span class="workspace-tag">${esc(d.workspace_name)}</span>` : '<span class="meta">-</span>'}</td>
       <td class="hide-mobile meta">${fmtDate(d.created_at)}</td>
       <td><span class="meta">${fmtDate(d.updated_at || d.created_at)}</span></td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteDoc('${d.id}','${esc(d.title)}')" title="Delete">&#10005;</button>
+      </div></td>
     </tr>
   `).join('');
 }
@@ -607,54 +860,58 @@ function showDocsList() {
 
 async function openDoc(id) {
   try {
-    const data = await api('/docs/pages/' + id);
+    const data = await apiRaw('/docs/pages/' + id);
     if (!data) return;
     const { page, blocks } = data;
-
     document.getElementById('docsListView').style.display = 'none';
     document.getElementById('docsDetailView').style.display = '';
 
     let html = `<h2>${esc(page.title || 'Untitled')}</h2>`;
     html += `<div class="doc-meta">${page.workspace_name ? `<span class="workspace-tag">${esc(page.workspace_name)}</span> &middot; ` : ''}Created ${fmtDate(page.created_at)}${page.updated_at ? ` &middot; Updated ${fmtDate(page.updated_at)}` : ''}</div>`;
     html += '<div class="doc-blocks">';
-    for (const block of blocks) {
-      html += renderBlock(block);
-    }
-    if (blocks.length === 0) {
-      html += '<p class="meta">This page has no content blocks.</p>';
-    }
+    for (const block of blocks) html += renderBlock(block);
+    if (blocks.length === 0) html += '<p class="meta">This page has no content blocks.</p>';
     html += '</div>';
     document.getElementById('docDetail').innerHTML = html;
-  } catch (e) {
-    toast('Failed to load document: ' + e.message, true);
-  }
+
+    // Detail actions (export markdown link)
+    document.getElementById('docDetailActions').innerHTML = `
+      <a href="/docs/pages/${id}/export/markdown" class="btn btn-sm" title="Export as Markdown" target="_blank">&#8615; .md</a>
+    `;
+  } catch (e) { toast('Failed to load document', true); }
+}
+
+async function deleteDoc(id, title) {
+  if (!confirm(`Delete "${title}"? This will delete all content.`)) return;
+  try { await api('/docs/pages/' + id, { method: 'DELETE' }); toast('Document deleted'); await loadAllData(); }
+  catch (e) { toast('Delete failed', true); }
 }
 
 function renderBlock(block) {
   const d = block.data || {};
   switch (block.type) {
-    case 'heading':
-      const level = d.level || 2;
-      return `<div class="block"><h${level} class="block-heading">${esc(d.content || '')}</h${level}></div>`;
+    case 'heading': {
+      const lv = Math.min(d.level || 2, 6);
+      return `<div class="block"><h${lv} class="block-heading">${esc(d.content || '')}</h${lv}></div>`;
+    }
     case 'text':
-      return `<div class="block"><p class="block-text">${esc(d.content || '')}</p></div>`;
+      return `<div class="block"><p class="block-text">${renderMarkdown(d.content || '')}</p></div>`;
     case 'list': {
       const items = d.items || (d.content ? d.content.split('\n') : []);
-      if (items.length === 0) return '';
+      if (!items.length) return '';
       return `<div class="block"><ul class="block-list">${items.map(i => `<li>${esc(typeof i === 'string' ? i : (i.text || ''))}</li>`).join('')}</ul></div>`;
     }
     case 'code':
       return `<div class="block"><pre class="block-code">${esc(d.content || d.code || '')}</pre></div>`;
-    case 'image':
+    case 'image': {
       const src = d.url || d.src || '';
       return src ? `<div class="block block-image"><img src="${esc(src)}" alt="${esc(d.alt || 'Image')}"></div>` : '';
+    }
     case 'table': {
       const rows = d.rows || [];
-      if (rows.length === 0) return '';
+      if (!rows.length) return '';
       let t = '<div class="block block-table"><div class="table-wrap"><table>';
-      if (d.headers) {
-        t += '<thead><tr>' + d.headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr></thead>';
-      }
+      if (d.headers) t += '<thead><tr>' + d.headers.map(h => `<th>${esc(h)}</th>`).join('') + '</tr></thead>';
       t += '<tbody>';
       for (const row of rows) {
         const cells = Array.isArray(row) ? row : Object.values(row);
@@ -664,43 +921,42 @@ function renderBlock(block) {
       return t;
     }
     default:
-      // Fallback: show raw JSON
       return `<div class="block"><p class="block-text"><em>[${esc(block.type)}]</em> ${esc(d.content || JSON.stringify(d))}</p></div>`;
   }
 }
 
-// ═══════════════════════════════════════════════════
+// Simple markdown-like rendering for text blocks
+function renderMarkdown(text) {
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g, '<em>$1</em>')
+    .replace(/`(.*?)`/g, '<code style="background:var(--badge-bg);padding:0.1rem 0.3rem;border-radius:3px;font-size:0.85em;">$1</code>')
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener" style="color:var(--accent)">$1</a>')
+    .replace(/\n/g, '<br>');
+}
+
+// ══════════════════════════════════════════════════
 //  TABLES
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 
 function renderTables() {
   const tbody = document.getElementById('tableList');
   const empty = document.getElementById('emptyTables');
   const stats = document.getElementById('tableStats');
-
-  if (allTables.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    stats.innerHTML = '';
-    return;
-  }
+  if (allTables.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; stats.innerHTML = ''; return; }
   empty.style.display = 'none';
   stats.innerHTML = `<span><strong>${allTables.length}</strong> table${allTables.length !== 1 ? 's' : ''}</span>`;
-
   tbody.innerHTML = allTables.map(t => `
     <tr class="clickable" onclick="openTable('${t.id}')">
-      <td>
-        <span class="file-icon">&#128202;</span>
-        <span class="filename">${esc(t.name || 'Untitled')}</span>
-      </td>
-      <td class="hide-mobile">
-        ${t.workspace_name ? `<span class="workspace-tag">${esc(t.workspace_name)}</span>` : '<span class="meta">-</span>'}
-      </td>
+      <td><span class="file-icon">&#128202;</span><span class="filename">${esc(t.name || 'Untitled')}</span></td>
+      <td class="hide-mobile">${t.workspace_name ? `<span class="workspace-tag">${esc(t.workspace_name)}</span>` : '<span class="meta">-</span>'}</td>
       <td><span class="meta">${fmtDate(t.created_at)}</span></td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteTable('${t.id}','${esc(t.name)}')" title="Delete">&#10005;</button>
+      </div></td>
     </tr>
   `).join('');
 }
-
 function showTablesList() {
   document.getElementById('tablesListView').style.display = '';
   document.getElementById('tablesDetailView').style.display = 'none';
@@ -708,10 +964,9 @@ function showTablesList() {
 
 async function openTable(id) {
   try {
-    const data = await api('/tables/' + id);
+    const data = await apiRaw('/tables/' + id);
     if (!data) return;
     const { table: tbl, columns, rows } = data;
-
     document.getElementById('tablesListView').style.display = 'none';
     document.getElementById('tablesDetailView').style.display = '';
 
@@ -723,96 +978,76 @@ async function openTable(id) {
     if (columns.length === 0) {
       html += '<div class="empty"><p>This table has no columns defined.</p></div>';
     } else {
-      html += '<div class="data-table-wrap"><div class="table-wrap"><table><thead><tr>';
-      html += '<th>#</th>';
-      for (const col of columns) {
-        html += `<th>${esc(col.name)} <span class="col-type">${esc(col.type)}</span></th>`;
-      }
+      html += '<div class="data-table-wrap"><div class="table-wrap"><table><thead><tr><th>#</th>';
+      for (const col of columns) html += `<th>${esc(col.name)} <span class="col-type">${esc(col.type)}</span></th>`;
       html += '</tr></thead><tbody>';
-
       if (rows.length === 0) {
-        html += `<tr><td colspan="${columns.length + 1}" style="text-align:center; color:#9ca3af; padding:2rem;">No rows yet</td></tr>`;
+        html += `<tr><td colspan="${columns.length + 1}" style="text-align:center; color:var(--text-muted); padding:2rem;">No rows yet</td></tr>`;
       } else {
         rows.forEach((row, i) => {
           html += '<tr>';
           html += `<td class="meta">${i + 1}</td>`;
-          for (const col of columns) {
-            const val = row.cells[col.id];
-            html += `<td>${renderCellValue(val, col.type)}</td>`;
-          }
+          for (const col of columns) html += `<td>${renderCellValue(row.cells[col.id], col.type)}</td>`;
           html += '</tr>';
         });
       }
-
       html += '</tbody></table></div></div>';
     }
-
     document.getElementById('tableDetail').innerHTML = html;
-  } catch (e) {
-    toast('Failed to load table: ' + e.message, true);
-  }
+  } catch (e) { toast('Failed to load table', true); }
+}
+
+async function deleteTable(id, name) {
+  if (!confirm(`Delete table "${name}"? All data will be lost.`)) return;
+  try { await api('/tables/' + id, { method: 'DELETE' }); toast('Table deleted'); await loadAllData(); }
+  catch (e) { toast('Delete failed', true); }
 }
 
 function renderCellValue(val, colType) {
   if (val === null || val === undefined || val === '') return '<span class="meta">-</span>';
-  // jsonb values might be wrapped
   const v = typeof val === 'object' && val !== null ? (val.value !== undefined ? val.value : JSON.stringify(val)) : val;
   switch (colType) {
-    case 'boolean':
-      return v === true || v === 'true' ? '<span style="color:#16a34a">&#10003;</span>' : '<span style="color:#dc2626">&#10007;</span>';
-    case 'url':
-      return `<a href="${esc(String(v))}" target="_blank" rel="noopener" style="color:#2563eb; text-decoration:underline;">${esc(String(v).substring(0, 40))}${String(v).length > 40 ? '...' : ''}</a>`;
-    case 'date':
-      return `<span>${fmtDate(v)}</span>`;
-    case 'number':
-      return `<span>${esc(String(v))}</span>`;
-    default:
-      return esc(String(v));
+    case 'boolean': return v === true || v === 'true' ? `<span style="color:var(--success)">&#10003;</span>` : `<span style="color:var(--danger)">&#10007;</span>`;
+    case 'url': return `<a href="${esc(String(v))}" target="_blank" rel="noopener" style="color:var(--accent); text-decoration:underline;">${esc(String(v).substring(0, 40))}${String(v).length > 40 ? '...' : ''}</a>`;
+    case 'date': return `<span>${fmtDate(v)}</span>`;
+    case 'number': return `<span>${esc(String(v))}</span>`;
+    default: return esc(String(v));
   }
 }
 
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 //  CALENDAR
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 
 function renderCalendars() {
   const tbody = document.getElementById('calendarList');
   const empty = document.getElementById('emptyCalendars');
   const stats = document.getElementById('calStats');
-
-  if (allCalendars.length === 0) {
-    tbody.innerHTML = '';
-    empty.style.display = 'block';
-    stats.innerHTML = '';
-    return;
-  }
+  if (allCalendars.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; stats.innerHTML = ''; return; }
   empty.style.display = 'none';
   stats.innerHTML = `<span><strong>${allCalendars.length}</strong> calendar${allCalendars.length !== 1 ? 's' : ''}</span>`;
-
   tbody.innerHTML = allCalendars.map(c => `
     <tr class="clickable" onclick="openCalendar('${c.id}', '${esc(c.name)}')">
-      <td>
-        <span class="file-icon">&#128197;</span>
-        <span class="filename">${esc(c.name || 'Untitled')}</span>
-      </td>
-      <td class="hide-mobile">
-        ${c.workspace_name ? `<span class="workspace-tag">${esc(c.workspace_name)}</span>` : '<span class="meta">-</span>'}
-      </td>
+      <td><span class="file-icon">&#128197;</span><span class="filename">${esc(c.name || 'Untitled')}</span></td>
+      <td class="hide-mobile">${c.workspace_name ? `<span class="workspace-tag">${esc(c.workspace_name)}</span>` : '<span class="meta">-</span>'}</td>
+      <td><div class="actions">
+        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteCalendar('${c.id}','${esc(c.name)}')" title="Delete">&#10005;</button>
+      </div></td>
     </tr>
   `).join('');
 }
-
 function showCalendarsList() {
   document.getElementById('calendarListView').style.display = '';
   document.getElementById('calendarDetailView').style.display = 'none';
 }
 
 async function openCalendar(id, name) {
+  currentCalendarId = id;
+  currentCalendarName = name;
   try {
-    const data = await api('/calendars/' + id + '/events');
+    const data = await apiRaw('/calendars/' + id + '/events');
     if (!data) return;
     const events = data.events || [];
-
     document.getElementById('calendarListView').style.display = 'none';
     document.getElementById('calendarDetailView').style.display = '';
 
@@ -822,31 +1057,45 @@ async function openCalendar(id, name) {
     </div>`;
 
     if (events.length === 0) {
-      html += '<div class="empty"><div class="icon">&#128197;</div><p>No events in this calendar.</p></div>';
+      html += '<div class="empty"><div class="icon">&#128197;</div><p>No events. Click "+ Add Event" to create one!</p></div>';
     } else {
       for (const ev of events) {
         html += `<div class="event-card">
-          <div class="event-title">${esc(ev.title)}</div>
-          <div class="event-time">&#128336; ${fmtDateTime(ev.start_ts)} &mdash; ${fmtDateTime(ev.end_ts)}</div>
-          ${ev.description ? `<div class="event-desc">${esc(ev.description)}</div>` : ''}
+          <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+            <div>
+              <div class="event-title">${esc(ev.title)}</div>
+              <div class="event-time">&#128336; ${fmtDateTime(ev.start_ts)} &mdash; ${fmtDateTime(ev.end_ts)}</div>
+              ${ev.description ? `<div class="event-desc">${esc(ev.description)}</div>` : ''}
+            </div>
+            <button class="btn btn-sm btn-danger" onclick="deleteEvent('${id}','${ev.id}','${esc(ev.title)}')" title="Delete" style="flex-shrink:0; margin-left:0.5rem;">&#10005;</button>
+          </div>
         </div>`;
       }
     }
-
     document.getElementById('calendarDetail').innerHTML = html;
-  } catch (e) {
-    toast('Failed to load calendar: ' + e.message, true);
-  }
+  } catch (e) { toast('Failed to load calendar', true); }
 }
 
-// ═══════════════════════════════════════════════════
+async function deleteCalendar(id, name) {
+  if (!confirm(`Delete calendar "${name}" and all its events?`)) return;
+  try { await api('/calendars/' + id, { method: 'DELETE' }); toast('Calendar deleted'); await loadAllData(); }
+  catch (e) { toast('Delete failed', true); }
+}
+
+async function deleteEvent(calId, eventId, title) {
+  if (!confirm(`Delete event "${title}"?`)) return;
+  try {
+    await api(`/calendars/${calId}/events/${eventId}`, { method: 'DELETE' });
+    toast('Event deleted');
+    openCalendar(calId, currentCalendarName);
+  } catch (e) { toast('Delete failed', true); }
+}
+
+// ══════════════════════════════════════════════════
 //  HELPERS
-// ═══════════════════════════════════════════════════
+// ══════════════════════════════════════════════════
 
-function logout() {
-  document.cookie = 'ws_session=; Path=/browser; Max-Age=0';
-  window.location.href = '/browser';
-}
+function logout() { document.cookie = 'ws_session=; Path=/browser; Max-Age=0'; window.location.href = '/browser'; }
 
 function fmtSize(bytes) {
   const b = Number(bytes);
@@ -855,31 +1104,21 @@ function fmtSize(bytes) {
   if (b < 1024 * 1024 * 1024) return (b / (1024 * 1024)).toFixed(1) + ' MB';
   return (b / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
 }
-
 function fmtDate(iso) {
   if (!iso) return '-';
-  const d = new Date(iso);
-  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+  return new Date(iso).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
 }
-
 function fmtDateTime(iso) {
   if (!iso) return '-';
   const d = new Date(iso);
   return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
     ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
 }
-
 function shortType(ct) {
   if (!ct) return '-';
-  const map = {
-    'application/pdf': 'PDF', 'image/png': 'PNG', 'image/jpeg': 'JPEG', 'image/gif': 'GIF',
-    'text/plain': 'Text', 'text/csv': 'CSV', 'application/json': 'JSON', 'application/zip': 'ZIP',
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
-  };
+  const map = {'application/pdf':'PDF','image/png':'PNG','image/jpeg':'JPEG','image/gif':'GIF','text/plain':'Text','text/csv':'CSV','application/json':'JSON','application/zip':'ZIP','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':'Excel','application/vnd.openxmlformats-officedocument.wordprocessingml.document':'Word'};
   return map[ct] || ct.split('/').pop();
 }
-
 function fileIcon(ct) {
   if (!ct) return '&#128196;';
   if (ct.startsWith('image/')) return '&#128247;';
@@ -891,14 +1130,7 @@ function fileIcon(ct) {
   if (ct.startsWith('audio/')) return '&#127925;';
   return '&#128196;';
 }
-
-function esc(s) {
-  if (!s) return '';
-  const d = document.createElement('div');
-  d.textContent = s;
-  return d.innerHTML;
-}
-
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function toast(msg, isError) {
   const t = document.getElementById('toast');
   t.textContent = msg;

@@ -7,6 +7,13 @@ services:
       POSTGRES_DB: workspace
     volumes:
       - workspace_db:/var/lib/postgresql/data
+      - ./backups:/backups
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U workspace"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     restart: unless-stopped
 
   api:
@@ -19,9 +26,41 @@ services:
     volumes:
       - workspace_files:/data/files
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     ports:
       - "8081:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8080/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+
+  backup:
+    image: postgres:16
+    environment:
+      PGPASSWORD: ${DB_PASSWORD}
+    volumes:
+      - ./backups:/backups
+    depends_on:
+      db:
+        condition: service_healthy
+    entrypoint: >
+      sh -c '
+        echo "Workspace DB backup cron — runs daily at 3 AM UTC"
+        while true; do
+          STAMP=$$(date +%Y%m%d_%H%M%S)
+          echo "[$$STAMP] Starting backup..."
+          pg_dump -h db -U workspace workspace | gzip > /backups/workspace_$$STAMP.sql.gz
+          echo "[$$STAMP] Backup complete: workspace_$$STAMP.sql.gz"
+          # Keep only the last 7 backups
+          ls -1t /backups/workspace_*.sql.gz 2>/dev/null | tail -n +8 | xargs rm -f 2>/dev/null
+          echo "[$$STAMP] Sleeping 24h..."
+          sleep 86400
+        done
+      '
     restart: unless-stopped
 
 volumes:

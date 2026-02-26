@@ -62,4 +62,54 @@ export async function tablesRoutes(app: FastifyInstance) {
     }
     return { rows, cells };
   });
+
+  /* ── Update table name ─────────────────────────── */
+  app.put("/tables/:id", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const id = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "update tables set name=$2 where id=$1 returning id, name",
+      [id, body.name]
+    );
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return rows[0];
+  });
+
+  /* ── Update row cells (upsert) ─────────────────── */
+  app.put("/tables/:tableId/rows/:rowId", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const { rowId } = req.params as any;
+    const body = req.body as any;
+    const cells = body.cells ?? {};
+    // Verify row exists
+    const check = await db.q("select id from table_rows where id=$1", [rowId]);
+    if (!check[0]) { reply.code(404); return { error: "row not found" }; }
+    for (const [columnId, value] of Object.entries(cells)) {
+      await db.q(
+        `insert into table_cells (row_id, column_id, value) values ($1,$2,$3)
+         on conflict (row_id, column_id) do update set value=$3`,
+        [rowId, columnId, value]
+      );
+    }
+    return { ok: true, rowId };
+  });
+
+  /* ── Delete a row (cascades cells) ─────────────── */
+  app.delete("/tables/:tableId/rows/:rowId", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const { rowId } = req.params as any;
+    const rows = await db.q("delete from table_rows where id=$1 returning id", [rowId]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
+
+  /* ── Delete a table (cascades everything) ──────── */
+  app.delete("/tables/:id", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const id = (req.params as any).id;
+    const rows = await db.q("delete from tables where id=$1 returning id", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
 }

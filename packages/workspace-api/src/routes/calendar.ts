@@ -41,4 +41,43 @@ export async function calendarRoutes(app: FastifyInstance) {
     );
     return { events: rows };
   });
+
+  /* ── Update an event ───────────────────────────── */
+  app.put("/calendars/:calId/events/:eventId", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const { eventId } = req.params as any;
+    const body = req.body as any;
+    const sets: string[] = [];
+    const vals: any[] = [eventId];
+    let i = 2;
+    if (body.title !== undefined) { sets.push(`title=$${i++}`); vals.push(body.title); }
+    if (body.description !== undefined) { sets.push(`description=$${i++}`); vals.push(body.description); }
+    if (body.startTs !== undefined) { sets.push(`start_ts=$${i++}`); vals.push(body.startTs); }
+    if (body.endTs !== undefined) { sets.push(`end_ts=$${i++}`); vals.push(body.endTs); }
+    if (sets.length === 0) { reply.code(400); return { error: "nothing to update" }; }
+    const rows = await db.q(
+      `update events set ${sets.join(",")} where id=$1 returning id, title, start_ts, end_ts`,
+      vals
+    );
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return rows[0];
+  });
+
+  /* ── Delete an event ───────────────────────────── */
+  app.delete("/calendars/:calId/events/:eventId", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const { eventId } = req.params as any;
+    const rows = await db.q("delete from events where id=$1 returning id", [eventId]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
+
+  /* ── Delete a calendar (cascades events) ───────── */
+  app.delete("/calendars/:id", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const id = (req.params as any).id;
+    const rows = await db.q("delete from calendars where id=$1 returning id", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
 }

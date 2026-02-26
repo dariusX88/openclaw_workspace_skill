@@ -1,6 +1,6 @@
 ---
 name: Workspace
-description: Native workspace with docs, tables, calendar, and file storage. No Google required.
+description: Native workspace with docs, tables, calendar, and file storage. Full CRUD, search, and export. No Google required.
 ---
 
 # Workspace API
@@ -8,13 +8,39 @@ description: Native workspace with docs, tables, calendar, and file storage. No 
 Base URL: http://localhost:8081
 All requests require header: Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}
 
-## First: Create a Workspace
+---
+
+## Workspaces
+
+### Create a Workspace
 
 ```bash
 curl -s -X POST "http://localhost:8081/workspaces" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"name\": \"WORKSPACE_NAME\"}"
 ```
 
-Returns: `{"id": "uuid"}`  — save this workspace ID for all other operations.
+Returns: `{"id": "uuid", "name": "...", "created_at": "..."}`
+
+### List Workspaces
+
+```bash
+curl -s -X GET "http://localhost:8081/workspaces" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Returns: `{"workspaces": [...]}`
+
+### Rename a Workspace
+
+```bash
+curl -s -X PUT "http://localhost:8081/workspaces/WORKSPACE_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"name\": \"NEW_NAME\"}"
+```
+
+### Delete a Workspace
+
+```bash
+curl -s -X DELETE "http://localhost:8081/workspaces/WORKSPACE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Deletes the workspace and all its docs, tables, calendars, and files (cascade).
 
 ---
 
@@ -39,6 +65,51 @@ Block types: `text`, `heading`, `list`, `code`, `image`, `table`
 ```bash
 curl -s -X GET "http://localhost:8081/docs/pages/PAGE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
 ```
+
+### List All Pages
+
+```bash
+curl -s -X GET "http://localhost:8081/docs/pages?workspaceId=WORKSPACE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Returns: `{"pages": [{id, title, workspace_id, created_at, updated_at}, ...]}`
+Omit workspaceId to list pages across all workspaces (max 200).
+
+### Update Page Title
+
+```bash
+curl -s -X PUT "http://localhost:8081/docs/pages/PAGE_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"title\": \"NEW_TITLE\"}"
+```
+
+### Update a Block
+
+```bash
+curl -s -X PUT "http://localhost:8081/docs/pages/PAGE_ID/blocks/BLOCK_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"type\": \"text\", \"data\": {\"content\": \"Updated content\"}, \"orderIndex\": 1}"
+```
+
+All fields are optional — only provided fields are updated.
+
+### Delete a Page
+
+```bash
+curl -s -X DELETE "http://localhost:8081/docs/pages/PAGE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Deletes the page and all its blocks (cascade).
+
+### Delete a Block
+
+```bash
+curl -s -X DELETE "http://localhost:8081/docs/pages/PAGE_ID/blocks/BLOCK_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+### Export Page as Markdown
+
+```bash
+curl -s -X GET "http://localhost:8081/docs/pages/PAGE_ID/export/markdown" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -o page.md
+```
+
+Downloads the page content as a formatted Markdown file.
 
 ---
 
@@ -70,6 +141,42 @@ curl -s -X POST "http://localhost:8081/tables/TABLE_ID/rows" -H "Content-Type: a
 curl -s -X GET "http://localhost:8081/tables/TABLE_ID/rows?limit=50" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
 ```
 
+### Rename a Table
+
+```bash
+curl -s -X PUT "http://localhost:8081/tables/TABLE_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"name\": \"NEW_TABLE_NAME\"}"
+```
+
+### Update Row Cells
+
+```bash
+curl -s -X PUT "http://localhost:8081/tables/TABLE_ID/rows/ROW_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"cells\": {\"COLUMN_ID\": \"new value\"}}"
+```
+
+Only provided cells are updated (upsert). Existing cells not in the request are unchanged.
+
+### Delete a Row
+
+```bash
+curl -s -X DELETE "http://localhost:8081/tables/TABLE_ID/rows/ROW_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+### Delete a Table
+
+```bash
+curl -s -X DELETE "http://localhost:8081/tables/TABLE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Deletes the table, all its columns, rows, and cells (cascade).
+
+### Export Table as CSV
+
+```bash
+curl -s -X GET "http://localhost:8081/tables/TABLE_ID/export/csv" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -o table.csv
+```
+
+Downloads all table data as a CSV file with column headers.
+
 ---
 
 ## Calendar
@@ -91,6 +198,28 @@ curl -s -X POST "http://localhost:8081/calendars/CALENDAR_ID/events" -H "Content
 ```bash
 curl -s -X GET "http://localhost:8081/calendars/CALENDAR_ID/events?from=2026-03-01T00:00:00Z&to=2026-03-31T23:59:59Z" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
 ```
+
+### Update an Event
+
+```bash
+curl -s -X PUT "http://localhost:8081/calendars/CALENDAR_ID/events/EVENT_ID" -H "Content-Type: application/json" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}" -d "{\"title\": \"NEW_TITLE\", \"startTs\": \"2026-03-02T10:00:00Z\", \"endTs\": \"2026-03-02T11:00:00Z\"}"
+```
+
+All fields are optional — only provided fields are updated. Supported: `title`, `description`, `startTs`, `endTs`.
+
+### Delete an Event
+
+```bash
+curl -s -X DELETE "http://localhost:8081/calendars/CALENDAR_ID/events/EVENT_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+### Delete a Calendar
+
+```bash
+curl -s -X DELETE "http://localhost:8081/calendars/CALENDAR_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Deletes the calendar and all its events (cascade).
 
 ---
 
@@ -123,3 +252,39 @@ curl -s -X GET "http://localhost:8081/files/FILE_ID/text" -H "Authorization: Bea
 Returns: `{"id": "uuid", "filename": "doc.pdf", "pages": 5, "text": "extracted plain text..."}`
 
 Use this to read the contents of uploaded PDF files. Only PDF files are supported.
+
+### Delete a File
+
+```bash
+curl -s -X DELETE "http://localhost:8081/files/FILE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Deletes the file from disk and database.
+
+---
+
+## Search
+
+### Search Across Workspace
+
+```bash
+curl -s -X GET "http://localhost:8081/search?q=KEYWORD&workspaceId=WORKSPACE_ID" -H "Authorization: Bearer {{WORKSPACE_SERVICE_TOKEN}}"
+```
+
+Searches across doc pages, doc blocks, table names, calendar events, and file names. Returns categorized results:
+
+```json
+{
+  "query": "KEYWORD",
+  "results": {
+    "pages": [...],
+    "blocks": [...],
+    "tables": [...],
+    "events": [...],
+    "files": [...]
+  },
+  "total": 12
+}
+```
+
+The `workspaceId` parameter is optional — omit it to search across all workspaces.

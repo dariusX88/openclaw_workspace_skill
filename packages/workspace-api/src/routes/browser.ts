@@ -201,6 +201,30 @@ export async function browserRoutes(app: FastifyInstance) {
     return { ok: true };
   });
 
+  // ── POST /browser/api/workspaces ────────────────
+  app.post("/browser/api/workspaces", async (req) => {
+    assertBrowserAuth(req);
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into workspaces (name) values ($1) returning id, name, created_at",
+      [body.name]
+    );
+    return rows[0];
+  });
+
+  // ── PUT /browser/api/workspaces/:id ───────────
+  app.put("/browser/api/workspaces/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "update workspaces set name=$2 where id=$1 returning id, name",
+      [id, body.name]
+    );
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return rows[0];
+  });
+
   // ═══════════════════════════════════════════════
   //  DOCS — list pages & get page with blocks
   // ═══════════════════════════════════════════════
@@ -241,6 +265,52 @@ export async function browserRoutes(app: FastifyInstance) {
       [id]
     );
     return { page: pages[0], blocks };
+  });
+
+  // ── POST /browser/api/docs/pages (create) ──────
+  app.post("/browser/api/docs/pages", async (req) => {
+    assertBrowserAuth(req);
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into docs_pages (workspace_id, title) values ($1,$2) returning id",
+      [body.workspaceId, body.title]
+    );
+    return { id: rows[0].id };
+  });
+
+  // ── POST /browser/api/docs/pages/:id/blocks ───
+  app.post("/browser/api/docs/pages/:id/blocks", async (req) => {
+    assertBrowserAuth(req);
+    const pageId = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into docs_blocks (page_id, type, data, order_index) values ($1,$2,$3,$4) returning id",
+      [pageId, body.type, body.data ?? {}, body.orderIndex ?? 0]
+    );
+    await db.q("update docs_pages set updated_at=now() where id=$1", [pageId]);
+    return { id: rows[0].id };
+  });
+
+  // ── PUT /browser/api/docs/pages/:id ───────────
+  app.put("/browser/api/docs/pages/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "update docs_pages set title=$2, updated_at=now() where id=$1 returning id, title",
+      [id, body.title]
+    );
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return rows[0];
+  });
+
+  // ── DELETE /browser/api/docs/pages/:id ────────
+  app.delete("/browser/api/docs/pages/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const rows = await db.q("delete from docs_pages where id=$1 returning id", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
   });
 
   // ═══════════════════════════════════════════════
@@ -309,6 +379,58 @@ export async function browserRoutes(app: FastifyInstance) {
     return { table: tables[0], columns, rows };
   });
 
+  // ── POST /browser/api/tables (create) ──────────
+  app.post("/browser/api/tables", async (req) => {
+    assertBrowserAuth(req);
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into tables (workspace_id, name) values ($1,$2) returning id",
+      [body.workspaceId, body.name]
+    );
+    return { id: rows[0].id };
+  });
+
+  // ── POST /browser/api/tables/:id/columns ──────
+  app.post("/browser/api/tables/:id/columns", async (req) => {
+    assertBrowserAuth(req);
+    const tableId = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into table_columns (table_id, name, type, order_index) values ($1,$2,$3,$4) returning id",
+      [tableId, body.name, body.type || "text", body.orderIndex ?? 0]
+    );
+    return { id: rows[0].id };
+  });
+
+  // ── POST /browser/api/tables/:id/rows ─────────
+  app.post("/browser/api/tables/:id/rows", async (req) => {
+    assertBrowserAuth(req);
+    const tableId = (req.params as any).id;
+    const body = req.body as any;
+    const row = await db.q(
+      "insert into table_rows (table_id) values ($1) returning id",
+      [tableId]
+    );
+    const rowId = row[0].id;
+    const cells = body.cells ?? {};
+    for (const [columnId, value] of Object.entries(cells)) {
+      await db.q(
+        "insert into table_cells (row_id, column_id, value) values ($1,$2,$3)",
+        [rowId, columnId, value]
+      );
+    }
+    return { rowId };
+  });
+
+  // ── DELETE /browser/api/tables/:id ────────────
+  app.delete("/browser/api/tables/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const rows = await db.q("delete from tables where id=$1 returning id", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
+
   // ═══════════════════════════════════════════════
   //  CALENDARS — list calendars & get events
   // ═══════════════════════════════════════════════
@@ -348,5 +470,46 @@ export async function browserRoutes(app: FastifyInstance) {
       [id, from, to]
     );
     return { events };
+  });
+
+  // ── POST /browser/api/calendars (create) ──────
+  app.post("/browser/api/calendars", async (req) => {
+    assertBrowserAuth(req);
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into calendars (workspace_id, name) values ($1,$2) returning id",
+      [body.workspaceId, body.name]
+    );
+    return { id: rows[0].id };
+  });
+
+  // ── POST /browser/api/calendars/:id/events ────
+  app.post("/browser/api/calendars/:id/events", async (req) => {
+    assertBrowserAuth(req);
+    const calendarId = (req.params as any).id;
+    const body = req.body as any;
+    const rows = await db.q(
+      "insert into events (calendar_id, title, description, start_ts, end_ts) values ($1,$2,$3,$4,$5) returning id",
+      [calendarId, body.title, body.description ?? null, body.startTs, body.endTs]
+    );
+    return { id: rows[0].id };
+  });
+
+  // ── DELETE /browser/api/calendars/:id ─────────
+  app.delete("/browser/api/calendars/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const rows = await db.q("delete from calendars where id=$1 returning id", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
+  });
+
+  // ── DELETE /browser/api/calendars/:calId/events/:eventId
+  app.delete("/browser/api/calendars/:calId/events/:eventId", async (req, reply) => {
+    assertBrowserAuth(req);
+    const { eventId } = req.params as any;
+    const rows = await db.q("delete from events where id=$1 returning id", [eventId]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    return { ok: true };
   });
 }

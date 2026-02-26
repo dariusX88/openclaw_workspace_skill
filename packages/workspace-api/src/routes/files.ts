@@ -112,4 +112,15 @@ export async function filesRoutes(app: FastifyInstance) {
       return { error: "Failed to extract text", detail: err.message };
     }
   });
+
+  /* ── Delete a file (disk + DB) ─────────────────── */
+  app.delete("/files/:id", async (req, reply) => {
+    assertServiceAuth(req, serviceToken);
+    const id = (req.params as any).id;
+    const rows = await db.q("select * from files where id=$1", [id]);
+    if (!rows[0]) { reply.code(404); return { error: "not found" }; }
+    try { await fs.promises.unlink(rows[0].storage_path); } catch {}
+    await db.q("delete from files where id=$1", [id]);
+    return { ok: true };
+  });
 }

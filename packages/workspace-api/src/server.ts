@@ -8,6 +8,8 @@ import { calendarRoutes } from "./routes/calendar.js";
 import { filesRoutes } from "./routes/files.js";
 import { workspacesRoutes } from "./routes/workspaces.js";
 import { browserRoutes } from "./routes/browser.js";
+import { searchRoutes } from "./routes/search.js";
+import { exportRoutes } from "./routes/export.js";
 
 const port = Number(process.env.PORT || 8080);
 const dbUrl = process.env.DB_URL!;
@@ -32,6 +34,8 @@ await app.register(calendarRoutes);
 await app.register(filesRoutes);
 await app.register(workspacesRoutes);
 await app.register(browserRoutes);
+await app.register(searchRoutes);
+await app.register(exportRoutes);
 
 app.setErrorHandler((err, req, reply) => {
   const e = err as any;
