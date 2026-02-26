@@ -205,7 +205,7 @@ install_skill() {
   mkdir -p "${OPENCLAW_DATA}/.openclaw/skills/workspace"
 
   # Detect VPS public IP for dashboard URL (user opens this in their browser)
-  VPS_IP=$(curl -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+  VPS_IP=$(curl -4 -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
   DASHBOARD_URL="http://${VPS_IP}:${API_PORT}/browser"
 
   # Copy SKILL.md with token, API IP, and dashboard URL substitution
@@ -288,7 +288,7 @@ summary() {
   echo -e "${GREEN}${BOLD}════════════════════════════════════════════════════${NC}"
   echo ""
   # Detect external IP
-  VPS_IP=$(curl -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "YOUR_VPS_IP")
+  VPS_IP=$(curl -4 -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "YOUR_VPS_IP")
 
   echo -e "  ${BOLD}API Endpoint:${NC}      http://127.0.0.1:${API_PORT}"
   echo -e "  ${BOLD}Health Check:${NC}      http://127.0.0.1:${API_PORT}/health"
