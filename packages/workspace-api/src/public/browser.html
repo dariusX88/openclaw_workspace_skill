@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Workspace Files</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #f8f9fb;
+    color: #1a1a2e;
+    line-height: 1.5;
+  }
+
+  /* ── Header ────────────────────────────────────── */
+  .header {
+    background: #fff;
+    border-bottom: 1px solid #e2e5ea;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+  .header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  /* ── Controls ──────────────────────────────────── */
+  select, .btn {
+    font-family: inherit;
+    font-size: 0.875rem;
+    padding: 0.5rem 0.75rem;
+    border-radius: 6px;
+    border: 1px solid #d1d5db;
+    background: #fff;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  select:hover, .btn:hover { border-color: #93a3b8; }
+  select:focus, .btn:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+
+  .btn-primary {
+    background: #2563eb;
+    color: #fff;
+    border-color: #2563eb;
+    font-weight: 500;
+  }
+  .btn-primary:hover { background: #1d4ed8; }
+
+  .btn-danger {
+    background: #fff;
+    color: #dc2626;
+    border-color: #fca5a5;
+  }
+  .btn-danger:hover { background: #fef2f2; border-color: #dc2626; }
+
+  .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+
+  .btn-logout {
+    background: none;
+    border: none;
+    color: #6b7280;
+    font-size: 0.8rem;
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+  }
+  .btn-logout:hover { color: #dc2626; }
+
+  /* ── Main ──────────────────────────────────────── */
+  .container {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 1.5rem;
+  }
+
+  /* ── Upload Zone ───────────────────────────────── */
+  .upload-zone {
+    border: 2px dashed #d1d5db;
+    border-radius: 10px;
+    padding: 2rem;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    transition: all 0.2s;
+    background: #fff;
+    cursor: pointer;
+  }
+  .upload-zone.drag-over {
+    border-color: #2563eb;
+    background: #eff6ff;
+  }
+  .upload-zone p {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+  .upload-zone .icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+  }
+  .upload-zone .hint {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+  }
+
+  .upload-progress {
+    display: none;
+    margin-top: 0.75rem;
+  }
+  .upload-progress .bar-track {
+    height: 6px;
+    background: #e5e7eb;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .upload-progress .bar-fill {
+    height: 100%;
+    background: #2563eb;
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.2s;
+  }
+  .upload-progress .bar-text {
+    font-size: 0.8rem;
+    color: #6b7280;
+    margin-top: 0.25rem;
+  }
+
+  /* ── Stats Bar ─────────────────────────────────── */
+  .stats {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.85rem;
+    color: #6b7280;
+  }
+  .stats strong { color: #1a1a2e; }
+
+  /* ── Table ─────────────────────────────────────── */
+  .table-wrap {
+    background: #fff;
+    border: 1px solid #e2e5ea;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  thead { background: #f9fafb; }
+  th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    border-bottom: 1px solid #e2e5ea;
+  }
+  td {
+    padding: 0.75rem 1rem;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+  }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #f9fafb; }
+
+  .file-icon { margin-right: 0.4rem; }
+  .filename { font-weight: 500; }
+  .meta { color: #9ca3af; font-size: 0.8rem; }
+  .workspace-tag {
+    display: inline-block;
+    background: #eff6ff;
+    color: #2563eb;
+    padding: 0.15rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+
+  .actions { display: flex; gap: 0.4rem; }
+
+  /* ── Empty State ───────────────────────────────── */
+  .empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #9ca3af;
+  }
+  .empty .icon { font-size: 3rem; margin-bottom: 0.5rem; }
+
+  /* ── Toast ─────────────────────────────────────── */
+  .toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    transform: translateY(100px);
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 100;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.error { background: #dc2626; }
+
+  /* ── Responsive ────────────────────────────────── */
+  @media (max-width: 700px) {
+    .header { padding: 0.75rem 1rem; }
+    .container { padding: 1rem; }
+    td, th { padding: 0.5rem 0.6rem; font-size: 0.8rem; }
+    .hide-mobile { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>&#128193; Workspace Files</h1>
+  <div class="header-actions">
+    <select id="wsFilter">
+      <option value="">All Workspaces</option>
+    </select>
+    <button class="btn btn-primary" onclick="triggerUpload()">&#43; Upload</button>
+    <button class="btn-logout" onclick="logout()" title="Sign out">&#9211; Logout</button>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Upload Zone -->
+  <div class="upload-zone" id="dropZone" onclick="triggerUpload()">
+    <div class="icon">&#128228;</div>
+    <p>Drag &amp; drop files here, or click to browse</p>
+    <p class="hint">Max 50 MB per file</p>
+    <div class="upload-progress" id="uploadProgress">
+      <div class="bar-track"><div class="bar-fill" id="uploadBar"></div></div>
+      <div class="bar-text" id="uploadText">Uploading...</div>
+    </div>
+  </div>
+  <input type="file" id="fileInput" hidden multiple>
+
+  <!-- Stats -->
+  <div class="stats" id="stats"></div>
+
+  <!-- File Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>File</th>
+          <th class="hide-mobile">Type</th>
+          <th>Size</th>
+          <th class="hide-mobile">Workspace</th>
+          <th class="hide-mobile">Uploaded</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody id="fileList"></tbody>
+    </table>
+    <div class="empty" id="emptyState" style="display:none">
+      <div class="icon">&#128194;</div>
+      <p>No files yet. Upload something!</p>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '/browser/api';
+let allFiles = [];
+let workspaces = [];
+
+// ── Init ────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadWorkspaces();
+  await loadFiles();
+  setupDragDrop();
+  document.getElementById('wsFilter').addEventListener('change', loadFiles);
+  document.getElementById('fileInput').addEventListener('change', handleFileSelect);
+});
+
+// ── API Helpers ─────────────────────────────────────
+async function api(path, opts = {}) {
+  const res = await fetch(API + path, { credentials: 'same-origin', ...opts });
+  if (res.status === 401) {
+    window.location.href = '/browser';
+    return null;
+  }
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText }));
+    throw new Error(err.error || 'Request failed');
+  }
+  return res.json();
+}
+
+// ── Load Data ───────────────────────────────────────
+async function loadWorkspaces() {
+  try {
+    const data = await api('/workspaces');
+    if (!data) return;
+    workspaces = data.workspaces || [];
+    const sel = document.getElementById('wsFilter');
+    workspaces.forEach(ws => {
+      const opt = document.createElement('option');
+      opt.value = ws.id;
+      opt.textContent = ws.name;
+      sel.appendChild(opt);
+    });
+  } catch (e) {
+    console.error('Failed to load workspaces:', e);
+  }
+}
+
+async function loadFiles() {
+  try {
+    const wsId = document.getElementById('wsFilter').value;
+    const qs = wsId ? `?workspaceId=${wsId}` : '';
+    const data = await api('/files' + qs);
+    if (!data) return;
+    allFiles = data.files || [];
+    renderFiles();
+  } catch (e) {
+    console.error('Failed to load files:', e);
+    toast('Failed to load files', true);
+  }
+}
+
+// ── Render ──────────────────────────────────────────
+function renderFiles() {
+  const tbody = document.getElementById('fileList');
+  const empty = document.getElementById('emptyState');
+  const stats = document.getElementById('stats');
+
+  if (allFiles.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    stats.innerHTML = '';
+    return;
+  }
+
+  empty.style.display = 'none';
+
+  const totalSize = allFiles.reduce((s, f) => s + Number(f.size_bytes || 0), 0);
+  stats.innerHTML = `<span><strong>${allFiles.length}</strong> file${allFiles.length !== 1 ? 's' : ''}</span>
+                     <span><strong>${fmtSize(totalSize)}</strong> total</span>`;
+
+  tbody.innerHTML = allFiles.map(f => `
+    <tr>
+      <td>
+        <span class="file-icon">${fileIcon(f.content_type)}</span>
+        <span class="filename">${esc(f.filename)}</span>
+      </td>
+      <td class="hide-mobile meta">${esc(shortType(f.content_type))}</td>
+      <td><span class="meta">${fmtSize(f.size_bytes)}</span></td>
+      <td class="hide-mobile">
+        ${f.workspace_name ? `<span class="workspace-tag">${esc(f.workspace_name)}</span>` : '<span class="meta">-</span>'}
+      </td>
+      <td class="hide-mobile meta">${fmtDate(f.created_at)}</td>
+      <td>
+        <div class="actions">
+          <a href="${API}/files/${f.id}/download" class="btn btn-sm" title="Download">&#8615;</a>
+          <button class="btn btn-sm btn-danger" onclick="deleteFile('${f.id}','${esc(f.filename)}')" title="Delete">&#10005;</button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// ── Upload ──────────────────────────────────────────
+function triggerUpload() {
+  const wsId = document.getElementById('wsFilter').value;
+  if (!wsId && workspaces.length > 0) {
+    toast('Select a workspace first', true);
+    return;
+  }
+  if (workspaces.length === 0) {
+    toast('Create a workspace first (via API or OpenClaw)', true);
+    return;
+  }
+  document.getElementById('fileInput').click();
+}
+
+function handleFileSelect(e) {
+  const files = e.target.files;
+  if (files.length) uploadFiles(files);
+  e.target.value = '';
+}
+
+function setupDragDrop() {
+  const zone = document.getElementById('dropZone');
+  ['dragenter', 'dragover'].forEach(evt =>
+    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.add('drag-over'); })
+  );
+  ['dragleave', 'drop'].forEach(evt =>
+    zone.addEventListener(evt, e => { e.preventDefault(); zone.classList.remove('drag-over'); })
+  );
+  zone.addEventListener('drop', e => {
+    const files = e.dataTransfer.files;
+    if (files.length) uploadFiles(files);
+  });
+}
+
+async function uploadFiles(fileList) {
+  const wsId = document.getElementById('wsFilter').value;
+  if (!wsId) {
+    toast('Select a workspace first', true);
+    return;
+  }
+
+  const progress = document.getElementById('uploadProgress');
+  const bar = document.getElementById('uploadBar');
+  const text = document.getElementById('uploadText');
+  progress.style.display = 'block';
+
+  let uploaded = 0;
+  const total = fileList.length;
+
+  for (const file of fileList) {
+    text.textContent = `Uploading ${file.name} (${uploaded + 1}/${total})...`;
+    bar.style.width = `${(uploaded / total) * 100}%`;
+
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      form.append('workspaceId', wsId);
+
+      await fetch(API + '/files?workspaceId=' + wsId, {
+        method: 'POST',
+        body: form,
+        credentials: 'same-origin',
+      }).then(r => {
+        if (r.status === 401) { window.location.href = '/browser'; return; }
+        if (!r.ok) throw new Error('Upload failed');
+        return r.json();
+      });
+
+      uploaded++;
+    } catch (e) {
+      toast(`Failed to upload ${file.name}`, true);
+    }
+  }
+
+  bar.style.width = '100%';
+  text.textContent = `Done! ${uploaded} file${uploaded !== 1 ? 's' : ''} uploaded.`;
+  toast(`Uploaded ${uploaded} file${uploaded !== 1 ? 's' : ''}`);
+  setTimeout(() => { progress.style.display = 'none'; bar.style.width = '0%'; }, 2000);
+  await loadFiles();
+}
+
+// ── Delete ──────────────────────────────────────────
+async function deleteFile(id, name) {
+  if (!confirm(`Delete "${name}"? This cannot be undone.`)) return;
+  try {
+    await api('/files/' + id, { method: 'DELETE' });
+    toast(`Deleted ${name}`);
+    await loadFiles();
+  } catch (e) {
+    toast('Delete failed: ' + e.message, true);
+  }
+}
+
+// ── Logout ──────────────────────────────────────────
+function logout() {
+  document.cookie = 'ws_session=; Path=/browser; Max-Age=0';
+  window.location.href = '/browser';
+}
+
+// ── Helpers ─────────────────────────────────────────
+function fmtSize(bytes) {
+  const b = Number(bytes);
+  if (b < 1024) return b + ' B';
+  if (b < 1024 * 1024) return (b / 1024).toFixed(1) + ' KB';
+  if (b < 1024 * 1024 * 1024) return (b / (1024 * 1024)).toFixed(1) + ' MB';
+  return (b / (1024 * 1024 * 1024)).toFixed(2) + ' GB';
+}
+
+function fmtDate(iso) {
+  if (!iso) return '-';
+  const d = new Date(iso);
+  return d.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) +
+    ' ' + d.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+}
+
+function shortType(ct) {
+  if (!ct) return '-';
+  const map = {
+    'application/pdf': 'PDF',
+    'image/png': 'PNG',
+    'image/jpeg': 'JPEG',
+    'image/gif': 'GIF',
+    'text/plain': 'Text',
+    'text/csv': 'CSV',
+    'application/json': 'JSON',
+    'application/zip': 'ZIP',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'Excel',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'Word',
+  };
+  return map[ct] || ct.split('/').pop();
+}
+
+function fileIcon(ct) {
+  if (!ct) return '&#128196;';
+  if (ct.startsWith('image/')) return '&#128247;';
+  if (ct === 'application/pdf') return '&#128213;';
+  if (ct.includes('spreadsheet') || ct === 'text/csv') return '&#128202;';
+  if (ct.includes('word') || ct === 'text/plain') return '&#128209;';
+  if (ct.includes('zip') || ct.includes('compressed')) return '&#128230;';
+  if (ct.startsWith('video/')) return '&#127909;';
+  if (ct.startsWith('audio/')) return '&#127925;';
+  return '&#128196;';
+}
+
+function esc(s) {
+  if (!s) return '';
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function toast(msg, isError) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast show' + (isError ? ' error' : '');
+  setTimeout(() => { t.className = 'toast'; }, 3000);
+}
+</script>
+</body>
+</html>
