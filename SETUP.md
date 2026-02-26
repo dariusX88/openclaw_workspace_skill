@@ -1,6 +1,6 @@
 # OpenClaw Workspace Skill — Full Setup Guide
 
-> Native workspace with **Docs**, **Tables**, **Calendar**, and **File Storage** for OpenClaw.
+> Native workspace with **Docs**, **Tables**, **Calendar**, **File Storage**, and **Web File Browser** for OpenClaw.
 > No Google, no OAuth — just Postgres + Fastify on your VPS.
 
 ---
@@ -13,6 +13,7 @@
 4. [Quick Install (One Command)](#quick-install-one-command)
 5. [Manual Installation](#manual-installation)
 6. [OpenClaw Skill Registration](#openclaw-skill-registration)
+7. [Web File Browser](#web-file-browser)
 7. [Verify Everything Works](#verify-everything-works)
 8. [API Reference](#api-reference)
 9. [Troubleshooting](#troubleshooting)
@@ -244,6 +245,44 @@ Check for clean startup (no errors).
 
 ---
 
+## Web File Browser
+
+The workspace skill includes a built-in web file browser at `/browser`. No extra setup needed — it's part of the API.
+
+### Access
+
+Open in your browser:
+
+```
+http://<your-vps-ip>:8081/browser
+```
+
+### Login
+
+Enter your `WORKSPACE_SERVICE_TOKEN` on the login page. This sets an HttpOnly cookie valid for 24 hours.
+
+### Features
+
+- **Browse files** across all workspaces or filter by workspace
+- **Upload files** via drag-and-drop or file picker (up to 50MB)
+- **Download files** with one click
+- **Delete files** with confirmation dialog
+- **File metadata** — name, type, size, workspace, upload date
+- **Responsive** — works on desktop and mobile
+
+### How Auth Works
+
+The file browser uses **cookie-based auth**, separate from the API's Bearer token auth:
+
+1. Visit `/browser` → login form appears
+2. Enter your service token → sets `HttpOnly` cookie, redirects to file browser
+3. All subsequent requests use the cookie automatically
+4. Cookie expires after 24 hours, or click Logout
+
+The existing Bearer-auth API endpoints are completely unchanged.
+
+---
+
 ## Verify Everything Works
 
 ### From the VPS terminal:
@@ -314,8 +353,20 @@ Column types: `text`, `number`, `date`, `boolean`, `select`, `url`
 
 | Method | Endpoint | Body | Returns |
 |--------|----------|------|---------|
+| GET | `/files?workspaceId=...` | — | `{files: [...]}` |
 | POST | `/files?workspaceId=...` | multipart `file` field | `{id}` |
 | GET | `/files/:id/download` | — | file stream |
+
+### File Browser (Cookie Auth)
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `/browser` | Web UI (login or file browser) |
+| GET | `/browser/api/files` | List files |
+| GET | `/browser/api/workspaces` | List workspaces |
+| GET | `/browser/api/files/:id/download` | Download file |
+| POST | `/browser/api/files` | Upload file |
+| DELETE | `/browser/api/files/:id` | Delete file |
 
 Max file size: 50MB
 

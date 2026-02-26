@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ============================================================================
 # OpenClaw Workspace Skill — Automated Installer
-# Installs Docs, Tables, Calendar & File Storage for OpenClaw
+# Installs Docs, Tables, Calendar, File Storage & Web File Browser for OpenClaw
 # ============================================================================
 set -euo pipefail
 
@@ -30,7 +30,7 @@ banner() {
   echo -e "${CYAN}${BOLD}"
   echo "╔══════════════════════════════════════════════════╗"
   echo "║   OpenClaw Workspace Skill — Installer           ║"
-  echo "║   Docs · Tables · Calendar · Files               ║"
+  echo "║   Docs · Tables · Calendar · Files · Browser     ║"
   echo "╚══════════════════════════════════════════════════╝"
   echo -e "${NC}"
 }
@@ -283,8 +283,12 @@ summary() {
   echo -e "${GREEN}${BOLD}  Installation Complete!${NC}"
   echo -e "${GREEN}${BOLD}════════════════════════════════════════════════════${NC}"
   echo ""
+  # Detect external IP
+  VPS_IP=$(curl -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "YOUR_VPS_IP")
+
   echo -e "  ${BOLD}API Endpoint:${NC}      http://127.0.0.1:${API_PORT}"
   echo -e "  ${BOLD}Health Check:${NC}      http://127.0.0.1:${API_PORT}/health"
+  echo -e "  ${BOLD}File Browser:${NC}      ${CYAN}http://${VPS_IP}:${API_PORT}/browser${NC}"
   echo -e "  ${BOLD}Install Dir:${NC}       ${INSTALL_DIR}"
   echo -e "  ${BOLD}Tokens:${NC}            ${INSTALL_DIR}/.env"
 
@@ -302,6 +306,10 @@ summary() {
     echo -e "  See SETUP.md for manual registration."
   fi
 
+  echo ""
+  echo -e "  ${BOLD}File Browser:${NC}      Open ${CYAN}http://${VPS_IP}:${API_PORT}/browser${NC} in your browser"
+  echo -e "                     Log in with your WORKSPACE_SERVICE_TOKEN"
+  echo -e "                     Upload, download, and manage files from any device"
   echo ""
   echo -e "  ${BOLD}Documentation:${NC}     ${INSTALL_DIR}/SETUP.md"
   echo -e "  ${BOLD}Troubleshooting:${NC}   ${INSTALL_DIR}/SETUP.md#troubleshooting"
