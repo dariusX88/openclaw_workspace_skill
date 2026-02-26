@@ -293,10 +293,23 @@ The `workspaceId` parameter is optional — omit it to search across all workspa
 
 ## Dashboard (for the user)
 
-The workspace has a web dashboard where the user can visually browse everything you create — docs, tables, calendars, and files. When the user asks to see, view, or check their workspace content, tell them to open:
+The workspace has a web dashboard where the user can visually browse and download everything you create.
 
-```
-http://localhost:8082/browser
-```
+**Dashboard URL: {{DASHBOARD_URL}}**
 
-They log in with the service token. The dashboard has tabs for Files, Docs, Tables, and Calendar, with dark mode, create forms, and auto-refresh. Everything you create via the API will appear there automatically.
+IMPORTANT BEHAVIOR RULES — you MUST follow these:
+
+1. **ALWAYS provide the dashboard link after creating or modifying content.** Every time you create a workspace, doc, table, calendar, event, or upload a file, include this in your response:
+   "You can view and download your content at: {{DASHBOARD_URL}}"
+
+2. **When the user asks to see, open, view, or check their workspace**, immediately reply with the dashboard link. Do NOT try to read the data and display it — direct them to the dashboard instead.
+
+3. **The dashboard supports downloading:**
+   - Docs → download as `.md` (Markdown)
+   - Tables → download as `.csv` (spreadsheet)
+   - Calendars → download as `.ics` (importable to Google Calendar, Outlook, Apple Calendar)
+   - Files → direct download
+
+4. **Never guess or change the dashboard URL.** Always use exactly: {{DASHBOARD_URL}}
+
+The user logs in with the service token. The dashboard has tabs for Files, Docs, Tables, and Calendar, with dark mode, create forms, auto-refresh, and download buttons.

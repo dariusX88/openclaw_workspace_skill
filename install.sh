@@ -204,8 +204,12 @@ install_skill() {
   # Create skill directory
   mkdir -p "${OPENCLAW_DATA}/.openclaw/skills/workspace"
 
-  # Copy SKILL.md with token and IP substitution
-  sed "s|http://localhost:8082|http://${DOCKER_BRIDGE_IP}:${API_PORT}|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
+  # Detect VPS public IP for dashboard URL (user opens this in their browser)
+  VPS_IP=$(curl -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I 2>/dev/null | awk '{print $1}' || echo "localhost")
+  DASHBOARD_URL="http://${VPS_IP}:${API_PORT}/browser"
+
+  # Copy SKILL.md with token, API IP, and dashboard URL substitution
+  sed "s|http://localhost:8082|http://${DOCKER_BRIDGE_IP}:${API_PORT}|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g; s|{{DASHBOARD_URL}}|${DASHBOARD_URL}|g" \
     packages/openclaw-skill/SKILL.md > "${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
 
   success "SKILL.md installed"

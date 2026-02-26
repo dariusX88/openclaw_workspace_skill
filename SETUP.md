@@ -202,8 +202,12 @@ SVC_TOKEN=$(grep WORKSPACE_SERVICE_TOKEN .env | cut -d= -f2)
 # Create skill directory
 mkdir -p "${OPENCLAW_DATA}/.openclaw/skills/workspace"
 
-# Copy and inject token (uses 172.17.0.1 for Docker cross-network access)
-sed "s|http://localhost:8082|http://172.17.0.1:8082|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
+# Detect public IP for dashboard URL
+VPS_IP=$(curl -sf --max-time 3 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+DASHBOARD_URL="http://${VPS_IP}:8082/browser"
+
+# Copy and inject token, Docker bridge IP for API calls, and dashboard URL for the user
+sed "s|http://localhost:8082|http://172.17.0.1:8082|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g; s|{{DASHBOARD_URL}}|${DASHBOARD_URL}|g" \
   packages/openclaw-skill/SKILL.md > "${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
 
 echo "SKILL.md installed at: ${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
