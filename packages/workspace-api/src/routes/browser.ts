@@ -200,4 +200,153 @@ export async function browserRoutes(app: FastifyInstance) {
     await db.q("delete from files where id=$1", [id]);
     return { ok: true };
   });
+
+  // ═══════════════════════════════════════════════
+  //  DOCS — list pages & get page with blocks
+  // ═══════════════════════════════════════════════
+
+  app.get("/browser/api/docs/pages", async (req) => {
+    assertBrowserAuth(req);
+    const workspaceId = (req.query as any)?.workspaceId;
+    const where = workspaceId ? "where p.workspace_id = $1" : "";
+    const params = workspaceId ? [workspaceId] : [];
+    const rows = await db.q(
+      `select p.id, p.title, p.workspace_id, p.created_at, p.updated_at,
+              w.name as workspace_name
+       from docs_pages p
+       left join workspaces w on w.id = p.workspace_id
+       ${where}
+       order by p.updated_at desc nulls last, p.created_at desc`,
+      params
+    );
+    return { pages: rows };
+  });
+
+  app.get("/browser/api/docs/pages/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const pages = await db.q(
+      `select p.*, w.name as workspace_name
+       from docs_pages p
+       left join workspaces w on w.id = p.workspace_id
+       where p.id = $1`,
+      [id]
+    );
+    if (!pages[0]) {
+      reply.code(404);
+      return { error: "not found" };
+    }
+    const blocks = await db.q(
+      "select id, type, data, order_index from docs_blocks where page_id = $1 order by order_index asc",
+      [id]
+    );
+    return { page: pages[0], blocks };
+  });
+
+  // ═══════════════════════════════════════════════
+  //  TABLES — list tables & get table with data
+  // ═══════════════════════════════════════════════
+
+  app.get("/browser/api/tables", async (req) => {
+    assertBrowserAuth(req);
+    const workspaceId = (req.query as any)?.workspaceId;
+    const where = workspaceId ? "where t.workspace_id = $1" : "";
+    const params = workspaceId ? [workspaceId] : [];
+    const rows = await db.q(
+      `select t.id, t.name, t.workspace_id, t.created_at,
+              w.name as workspace_name
+       from tables t
+       left join workspaces w on w.id = t.workspace_id
+       ${where}
+       order by t.created_at desc`,
+      params
+    );
+    return { tables: rows };
+  });
+
+  app.get("/browser/api/tables/:id", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const tables = await db.q(
+      `select t.*, w.name as workspace_name
+       from tables t
+       left join workspaces w on w.id = t.workspace_id
+       where t.id = $1`,
+      [id]
+    );
+    if (!tables[0]) {
+      reply.code(404);
+      return { error: "not found" };
+    }
+    const columns = await db.q(
+      "select id, name, type, order_index from table_columns where table_id = $1 order by order_index asc",
+      [id]
+    );
+    const rowsList = await db.q(
+      "select id, created_at from table_rows where table_id = $1 order by created_at asc",
+      [id]
+    );
+    // Fetch all cells for these rows in one query
+    const rowIds = rowsList.map((r: any) => r.id);
+    let cells: any[] = [];
+    if (rowIds.length > 0) {
+      cells = await db.q(
+        `select row_id, column_id, value from table_cells where row_id = ANY($1)`,
+        [rowIds]
+      );
+    }
+    // Group cells by row
+    const cellsByRow: Record<string, Record<string, any>> = {};
+    for (const c of cells) {
+      if (!cellsByRow[c.row_id]) cellsByRow[c.row_id] = {};
+      cellsByRow[c.row_id][c.column_id] = c.value;
+    }
+    const rows = rowsList.map((r: any) => ({
+      id: r.id,
+      created_at: r.created_at,
+      cells: cellsByRow[r.id] || {},
+    }));
+    return { table: tables[0], columns, rows };
+  });
+
+  // ═══════════════════════════════════════════════
+  //  CALENDARS — list calendars & get events
+  // ═══════════════════════════════════════════════
+
+  app.get("/browser/api/calendars", async (req) => {
+    assertBrowserAuth(req);
+    const workspaceId = (req.query as any)?.workspaceId;
+    const where = workspaceId ? "where c.workspace_id = $1" : "";
+    const params = workspaceId ? [workspaceId] : [];
+    const rows = await db.q(
+      `select c.id, c.name, c.workspace_id,
+              w.name as workspace_name
+       from calendars c
+       left join workspaces w on w.id = c.workspace_id
+       ${where}
+       order by c.name asc`,
+      params
+    );
+    return { calendars: rows };
+  });
+
+  app.get("/browser/api/calendars/:id/events", async (req, reply) => {
+    assertBrowserAuth(req);
+    const id = (req.params as any).id;
+    const cals = await db.q("select id from calendars where id = $1", [id]);
+    if (!cals[0]) {
+      reply.code(404);
+      return { error: "not found" };
+    }
+    const from = (req.query as any)?.from || "1970-01-01T00:00:00Z";
+    const to = (req.query as any)?.to || "2999-12-31T23:59:59Z";
+    const events = await db.q(
+      `select id, title, description, start_ts, end_ts
+       from events
+       where calendar_id = $1 and start_ts >= $2 and start_ts <= $3
+       order by start_ts asc`,
+      [id, from, to]
+    );
+    return { events };
+  });
 }
