@@ -23,7 +23,7 @@ export async function filesRoutes(app: FastifyInstance) {
     await fs.promises.mkdir(filesDir, { recursive: true });
     await fs.promises.writeFile(storagePath, await mp.toBuffer());
     const stat = await fs.promises.stat(storagePath);
-    const rows = await db.q<{ id: string }>(
+    const rows = await db.q(
       "insert into files (workspace_id, filename, content_type, size_bytes, storage_path) values ($1,$2,$3,$4,$5) returning id",
       [workspaceId, safeName, mp.mimetype ?? null, stat.size, storagePath]
     );
@@ -33,7 +33,7 @@ export async function filesRoutes(app: FastifyInstance) {
   app.get("/files/:id/download", async (req, reply) => {
     assertServiceAuth(req, serviceToken);
     const id = (req.params as any).id;
-    const rows = await db.q<any>("select * from files where id=$1", [id]);
+    const rows = await db.q("select * from files where id=$1", [id]);
     if (!rows[0]) {
       reply.code(404);
       return { error: "not found" };

@@ -30,8 +30,9 @@ await app.register(calendarRoutes);
 await app.register(filesRoutes);
 
 app.setErrorHandler((err, req, reply) => {
-  const code = (err as any).statusCode || 500;
-  reply.code(code).send({ error: err.message || "error" });
+  const e = err as any;
+  const code = e?.statusCode || 500;
+  reply.code(code).send({ error: e?.message || "error" });
 });
 
 app.listen({ port, host: "0.0.0.0" });
