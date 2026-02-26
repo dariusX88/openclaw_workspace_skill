@@ -42,7 +42,7 @@ Everything runs on your VPS — no external APIs, no Google accounts, no third-p
 ```
 OpenClaw Container                    Workspace Stack (Docker Compose)
 +---------------------+              +--------------------------------+
-|                     |   HTTP/REST  |  api (Fastify v5, port 8081)   |
+|                     |   HTTP/REST  |  api (Fastify v5, port 8082)   |
 |  LLM Agent          |  --------->  |    - /workspaces               |
 |  reads SKILL.md     |  via         |    - /docs/pages, /blocks      |
 |  executes curl      |  172.17.0.1  |    - /tables, /columns, /rows  |
@@ -174,7 +174,7 @@ CREATE TABLE (x11)
 ### Step 5: Verify the API
 
 ```bash
-curl -s http://127.0.0.1:8081/health
+curl -s http://127.0.0.1:8082/health
 ```
 
 Expected: `{"ok":true}`
@@ -203,7 +203,7 @@ SVC_TOKEN=$(grep WORKSPACE_SERVICE_TOKEN .env | cut -d= -f2)
 mkdir -p "${OPENCLAW_DATA}/.openclaw/skills/workspace"
 
 # Copy and inject token (uses 172.17.0.1 for Docker cross-network access)
-sed "s|http://localhost:8081|http://172.17.0.1:8081|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
+sed "s|http://localhost:8082|http://172.17.0.1:8082|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
   packages/openclaw-skill/SKILL.md > "${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
 
 echo "SKILL.md installed at: ${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
@@ -254,7 +254,7 @@ The workspace skill includes a built-in web file browser at `/browser`. No extra
 Open in your browser:
 
 ```
-http://<your-vps-ip>:8081/browser
+http://<your-vps-ip>:8082/browser
 ```
 
 ### Login
@@ -291,7 +291,7 @@ The existing Bearer-auth API endpoints are completely unchanged.
 TOKEN=$(grep WORKSPACE_SERVICE_TOKEN .env | cut -d= -f2)
 
 # Create a workspace
-curl -s -X POST http://172.17.0.1:8081/workspaces \
+curl -s -X POST http://172.17.0.1:8082/workspaces \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer ${TOKEN}" \
   -d '{"name": "VerifyTest"}'
@@ -305,7 +305,7 @@ Expected: `{"id":"<uuid>","name":"VerifyTest","created_at":"..."}`
 
 If the skill doesn't trigger, paste the endpoint reference directly:
 
-> The workspace API is at http://172.17.0.1:8081. Auth header: Authorization: Bearer YOUR_TOKEN. Create a workspace by POSTing to /workspaces with {"name": "HelloWorld"}.
+> The workspace API is at http://172.17.0.1:8082. Auth header: Authorization: Bearer YOUR_TOKEN. Create a workspace by POSTing to /workspaces with {"name": "HelloWorld"}.
 
 ---
 
@@ -400,12 +400,12 @@ docker restart <OPENCLAW_CONTAINER>
 
 ### "Connection failed (exit code 7)" from OpenClaw
 
-**Cause:** OpenClaw can't reach `localhost:8081` because it's in a different Docker network.
+**Cause:** OpenClaw can't reach `localhost:8082` because it's in a different Docker network.
 
 **Fix:** SKILL.md must use `172.17.0.1` (Docker bridge gateway), not `localhost`:
 
 ```bash
-sed -i 's|http://localhost:8081|http://172.17.0.1:8081|g' <OPENCLAW_DATA>/.openclaw/skills/workspace/SKILL.md
+sed -i 's|http://localhost:8082|http://172.17.0.1:8082|g' <OPENCLAW_DATA>/.openclaw/skills/workspace/SKILL.md
 docker restart <OPENCLAW_CONTAINER>
 ```
 

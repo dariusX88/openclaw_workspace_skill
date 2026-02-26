@@ -5,7 +5,7 @@
   "entry": "index.ts",
   "tools": "tools.json",
   "config": {
-    "WORKSPACE_API_URL": "http://localhost:8081",
+    "WORKSPACE_API_URL": "http://localhost:8082",
     "WORKSPACE_SERVICE_TOKEN": "${WORKSPACE_SERVICE_TOKEN}"
   }
 }

@@ -15,7 +15,7 @@ Generic skill wrapper that connects OpenClaw to the Workspace API.
 
 Set these environment variables (or configure in `skill.json`):
 
-- `WORKSPACE_API_URL` — URL of the workspace API (default: `http://localhost:8081`)
+- `WORKSPACE_API_URL` — URL of the workspace API (default: `http://localhost:8082`)
 - `WORKSPACE_SERVICE_TOKEN` — Bearer token for API auth
 
 ## Installation in OpenClaw

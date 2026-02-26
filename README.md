@@ -28,7 +28,7 @@ The installer handles everything: cloning, token generation, Docker build, migra
 ```
 OpenClaw Container                    Workspace Stack (Docker Compose)
 +---------------------+              +--------------------------------+
-|                     |   HTTP/REST  |  api (Fastify v5, port 8081)   |
+|                     |   HTTP/REST  |  api (Fastify v5, port 8082)   |
 |  LLM Agent          |  --------->  |    /workspaces                 |
 |  reads SKILL.md     |  via         |    /docs/pages, /blocks        |
 |  executes curl      |  172.17.0.1  |    /tables, /columns, /rows    |
@@ -73,7 +73,7 @@ sleep 8
 docker compose exec -T db psql -U workspace -d workspace < migrations/001_init.sql
 
 # Verify
-curl -s http://127.0.0.1:8081/health
+curl -s http://127.0.0.1:8082/health
 # => {"ok":true}
 ```
 
@@ -88,7 +88,7 @@ Then follow the [OpenClaw Skill Registration](SETUP.md#openclaw-skill-registrati
 
 ## Security
 
-- API exposed only on VPS (port 8081)
+- API exposed only on VPS (port 8082)
 - Bearer token auth for all requests
 - `WORKSPACE_SERVICE_TOKEN` should be 32+ characters
 - For external access, use a reverse proxy (Caddy/nginx) with additional auth

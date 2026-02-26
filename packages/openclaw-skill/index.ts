@@ -12,7 +12,7 @@ function envOrThrow(k: string) {
   return v;
 }
 
-const API = process.env.WORKSPACE_API_URL || "http://localhost:8081";
+const API = process.env.WORKSPACE_API_URL || "http://localhost:8082";
 const TOKEN = envOrThrow("WORKSPACE_SERVICE_TOKEN");
 
 async function apiJson(path: string, method: string, body?: any) {

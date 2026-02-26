@@ -17,7 +17,7 @@ BOLD='\033[1m'
 # ── Config ──────────────────────────────────────────────────────────────────
 REPO_URL="https://github.com/dariusX88/openclaw_workspace_skill.git"
 INSTALL_DIR="/docker/openclaw_workspace_skill"
-API_PORT=8081
+API_PORT=8082
 DOCKER_BRIDGE_IP="172.17.0.1"
 
 # ── Helpers ─────────────────────────────────────────────────────────────────
@@ -205,7 +205,7 @@ install_skill() {
   mkdir -p "${OPENCLAW_DATA}/.openclaw/skills/workspace"
 
   # Copy SKILL.md with token and IP substitution
-  sed "s|http://localhost:8081|http://${DOCKER_BRIDGE_IP}:${API_PORT}|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
+  sed "s|http://localhost:8082|http://${DOCKER_BRIDGE_IP}:${API_PORT}|g; s|{{WORKSPACE_SERVICE_TOKEN}}|${SVC_TOKEN}|g" \
     packages/openclaw-skill/SKILL.md > "${OPENCLAW_DATA}/.openclaw/skills/workspace/SKILL.md"
 
   success "SKILL.md installed"
